@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.baoli.pricer.mapper.MaterialMapper">
+
+    <resultMap id="BaseResultMap" type="com.baoli.pricer.pojo.Material">
+        <id column="id" property="id" />
+        <result column="material_category" property="materialCategory" />
+        <result column="material_name" property="materialName" />
+        <result column="photo_daban" property="photoDaban" />
+        <result column="photo_chengpin" property="photoChengpin" />
+        <result column="photo_xiaoguo" property="photoXiaoguo" />
+        <result column="price" property="price" />
+    </resultMap>
+
+    <sql id="Columns">
+        material_category, material_name, photo_daban, photo_chengpin, photo_xiaoguo, price
+    </sql>
+
+    <insert id="insert" parameterType="com.baoli.pricer.pojo.Material" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO baoli.material (material_category, material_name, photo_daban, photo_chengpin, photo_xiaoguo, price)
+        VALUES (#{entity.materialCategory}, #{entity.materialName}, #{entity.photoDaban}, #{entity.photoChengpin}, #{entity.photoXiaoguo}, #{entity.price})
+    </insert>
+
+    <insert id="insertBatch" parameterType="java.util.List">
+        INSERT INTO baoli.material (material_category, material_name, photo_daban, photo_chengpin, photo_xiaoguo, price)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.materialCategory}, #{item.materialName}, #{item.photoDaban}, #{item.photoChengpin}, #{item.photoXiaoguo}, #{item.price})
+        </foreach>
+    </insert>
+
+    <select id="searchByKeyword" parameterType="String" resultMap="BaseResultMap">
+        SELECT id, material_category, material_name, photo_daban, photo_chengpin, photo_xiaoguo, price
+        FROM baoli.material
+        WHERE material_category LIKE CONCAT('%', #{keyword}, '%')
+           OR material_name LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY id
+    </select>
+
+</mapper>

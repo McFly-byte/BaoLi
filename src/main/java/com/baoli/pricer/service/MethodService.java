@@ -114,4 +114,11 @@ public class MethodService {
     public List<ProcessMethod> getByCategory(String category) {
         return mapper.findByCategory(category);
     }
+
+    /**
+     *  查找所有不同的材料品类
+     */
+    public List<String> getAllCategory() {
+        return mapper.findAllCategory();
+    }
 }

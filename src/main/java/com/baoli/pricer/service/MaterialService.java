@@ -203,4 +203,11 @@ public class MaterialService {
         }
         return mapper.searchByKeyword(keyword.trim());
     }
+
+    /**
+     *  查找所有不同的材料品类
+     */
+    public List<String> getAllCategory() {
+        return mapper.findAllCategory();
+    }
 }

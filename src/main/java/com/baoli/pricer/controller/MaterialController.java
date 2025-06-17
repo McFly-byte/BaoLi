@@ -72,6 +72,15 @@ public class MaterialController {
         return ResponseEntity.ok(list);
     }
 
+    /**
+     *  查找所有不同的材料品类
+     */
+    @GetMapping("/categories")
+    public ResponseEntity<List<String>> getALlCategory() {
+        List<String> list = materialService.getAllCategory();
+        return ResponseEntity.ok(list);
+    }
+
 
 //    // 接收并上传单张图片
 //    @PostMapping("/upload")

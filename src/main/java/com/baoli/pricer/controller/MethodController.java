@@ -68,4 +68,13 @@ public class MethodController {
         List<ProcessMethod> list = service.getByCategory(category);
         return ResponseEntity.ok(list);
     }
+
+    /**
+     *  查找所有不同的材料品类
+     */
+    @GetMapping("/categories")
+    public ResponseEntity<List<String>> getALlCategory() {
+        List<String> list = service.getAllCategory();
+        return ResponseEntity.ok(list);
+    }
 }

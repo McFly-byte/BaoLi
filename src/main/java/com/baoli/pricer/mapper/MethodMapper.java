@@ -43,5 +43,11 @@ public interface MethodMapper {
      */
     @Select("SELECT * FROM baoli.process_method WHERE material_category = #{category}")
     List<ProcessMethod> findByCategory(@Param("category") String category);
+
+    /**
+     *  查找所有不同的材料品类
+     */
+    @Select("SELECT distinct material_category FROM baoli.process_method")
+    List<String> findAllCategory();
 }
 

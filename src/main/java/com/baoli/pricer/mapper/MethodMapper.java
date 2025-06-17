@@ -37,5 +37,11 @@ public interface MethodMapper {
 
     /** 模糊匹配查询：根据关键字查询材料品类或施工工艺 */
     List<ProcessMethod> searchByKeyword(@Param("keyword") String keyword);
+
+    /**
+     * 根据材料品类精确检索
+     */
+    @Select("SELECT * FROM baoli.process_method WHERE material_category = #{category}")
+    List<ProcessMethod> findByCategory(@Param("category") String category);
 }
 

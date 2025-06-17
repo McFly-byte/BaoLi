@@ -29,6 +29,8 @@ public interface MaterialMapper {
     @Select("SELECT COUNT(*) FROM baoli.material")
     int countAll();
 
+
+
     /**
      * 分页查询
      * @param offset 偏移量 = (page-1)*size
@@ -42,5 +44,13 @@ public interface MaterialMapper {
 
     /** 模糊匹配查询：根据关键字查询材料 */
     List<Material> searchByKeyword(@Param("keyword") String keyword);
+
+    /**
+     * 根据材料品类精确或模糊检索
+     */
+    @Select("SELECT id, material_category, material_name, photo_daban, photo_chengpin, photo_xiaoguo, price " +
+            "FROM baoli.material " +
+            "WHERE material_category = #{category}")
+    List<Material> findByCategory(@Param("category") String category);
 
 }

@@ -58,4 +58,14 @@ public class MethodController {
         List<ProcessMethod> results = service.searchMethods(keyword);
         return ResponseEntity.ok(results);
     }
+
+    /**
+     * GET /api/method/by-category?category=木饰面
+     * 按材料品类查询列表
+     */
+    @GetMapping("/by-category")
+    public ResponseEntity<List<ProcessMethod>> getByCategory(@RequestParam("category") String category) {
+        List<ProcessMethod> list = service.getByCategory(category);
+        return ResponseEntity.ok(list);
+    }
 }

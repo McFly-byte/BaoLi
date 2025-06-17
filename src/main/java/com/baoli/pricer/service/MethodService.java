@@ -106,4 +106,12 @@ public class MethodService {
         }
         return mapper.searchByKeyword(keyword.trim());
     }
+
+    /**
+     * 根据材料品类查询 Material 列表
+     * @param category 材料品类
+     */
+    public List<ProcessMethod> getByCategory(String category) {
+        return mapper.findByCategory(category);
+    }
 }

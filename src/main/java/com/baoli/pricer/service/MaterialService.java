@@ -13,6 +13,7 @@ import io.minio.PutObjectArgs;
 import io.minio.http.Method;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -60,40 +61,92 @@ public class MaterialService {
             Map<String, XSSFPictureData> images = WpsFloatedImageExtractor.getPictures(bytes);
 
             try (Workbook wb = WorkbookFactory.create(new ByteArrayInputStream(bytes))) {
+                // 创建公式计算器
+                FormulaEvaluator evaluator = wb.getCreationHelper().createFormulaEvaluator();
+
                 Sheet sheet = wb.getSheetAt(0);
+
+                // 1. 预收集“材料名称”列 (index=2) 的所有合并区域
+                List<CellRangeAddress> nameMergeRegions = new ArrayList<>();
+                for (int i = 0; i < sheet.getNumMergedRegions(); i++) {
+                    CellRangeAddress region = sheet.getMergedRegion(i);
+                    if (region.getFirstColumn() == 2 && region.getLastColumn() == 2) {
+                        nameMergeRegions.add(region);
+                    }
+                }
+
                 int totalRows = sheet.getLastRowNum() - 1;  // 扣除表头
                 int processed = 0;
                 List<Material> batch = new ArrayList<>(200);
 
-                // 从第2行（r=2）开始处理
+                // 2. 主循环：从第2行 (r=2) 开始
                 for (int r = 2; r <= sheet.getLastRowNum(); r++) {
                     Row row = sheet.getRow(r);
-                    if (row == null) { notifyProgress(taskId, ++processed, totalRows); continue; }
+                    String name = getCellString(row == null ? null : row.getCell(2));
 
-                    Material m = buildMaterialFromRow(row, images, r);
-                    batch.add(m);
+                    // 2.1 判断是否为合并区域起始行
+                    int finalR = r;
+                    CellRangeAddress hitRegion = nameMergeRegions.stream()
+                            .filter(reg -> reg.getFirstRow() == finalR)
+                            .findFirst()
+                            .orElse(null);
 
-                    if (batch.size() >= 200) {
-                        mapper.insertBatch(batch);
-                        log.info("成功上传 {} 条记录", batch.size());
-                        batch.clear();
+                    if (hitRegion != null) {
+                        // 2.2 拆分合并区域：与规格列 (index=6) 拼接
+                        String mergedName = name;
+                        for (int sub = hitRegion.getFirstRow(); sub <= hitRegion.getLastRow(); sub++) {
+                            Row subRow = sheet.getRow(sub);
+                            if (subRow == null) continue;
+                            String spec = getCellString(subRow.getCell(6));
+                            if (spec == null || spec.isEmpty()) continue;
+
+                            Material m = buildMaterialFromRow(subRow, images, sub, evaluator);
+                            m.setMaterialName(mergedName + "：" + spec);
+                            batch.add(m);
+                            if (batch.size() >= 200) {
+                                mapper.insertBatch(batch);
+                                batch.clear();
+                            }
+                        }
+                    } else {
+                        // 2.3 普通行：跳过材料名称为空的
+                        if (name == null || name.isEmpty()) {
+                            // 仅统计进度
+                            processed++;
+                            if (processed % 5 == 0) notifyProgress(taskId, processed, totalRows);
+                            continue;
+                        }
+                        // 2.4 正常处理一行
+                        Material m = buildMaterialFromRow(row, images, r, evaluator);
+                        batch.add(m);
+                        if (batch.size() >= 200) {
+                            mapper.insertBatch(batch);
+                            batch.clear();
+                        }
                     }
 
-//                    notifyProgress(taskId, ++processed, totalRows);
-                    ++processed;
-                    if (processed % 5 == 0) { // 每5行推送一次，减少频率
+                    // 2.5 进度推送：每5行一次
+                    processed++;
+                    if ( processed < 50 && processed % 5 == 0 ) {
+                        notifyProgress(taskId, processed, totalRows);
+                    }
+                    if (processed % 50 == 0) {
                         notifyProgress(taskId, processed, totalRows);
                     }
                 }
+
+                // 3. 写入剩余批次
                 if (!batch.isEmpty()) {
                     mapper.insertBatch(batch);
-                    log.info("成功上传 {} 条记录", batch.size());
                 }
-                // 结束时推 100%
+
+                // 4. 完成推 100%
                 messaging.convertAndSend(
                         "/topic/progress/" + taskId,
                         Map.of("percent", 100, "status", "done")
                 );
+
+                log.info("已处理{}条数据",processed);
             }
         } catch (Exception ex) {
             log.error("任务 {} 异常", taskId, ex);
@@ -103,6 +156,7 @@ public class MaterialService {
             );
         }
     }
+
 
     private void notifyProgress(String taskId, int done, int total) {
         int pct = (int)(done * 100.0 / total);
@@ -115,11 +169,12 @@ public class MaterialService {
 
     private Material buildMaterialFromRow(Row row,
                                           Map<String, XSSFPictureData> images,
-                                          int r) throws Exception {
+                                          int r,
+                                          FormulaEvaluator evaluator) throws Exception {
         Material m = new Material();
         m.setMaterialCategory(getCellString(row.getCell(1)));
         m.setMaterialName(getCellString(row.getCell(2)));
-        m.setPrice(getCellNumeric(row.getCell(13)));
+        m.setPrice(getCellNumeric(row.getCell(13), evaluator));
 
         m.setPhotoDaban(
                 uploadIfPresent(images, r, 3)
@@ -164,14 +219,39 @@ public class MaterialService {
         return (cell != null) ? cell.toString().trim() : null;
     }
 
-    private Double getCellNumeric(Cell cell) {
+    /**
+     * 读取数值单元格，若是公式，则先评估再取值
+     */
+    private Double getCellNumeric(Cell cell, FormulaEvaluator evaluator) {
         if (cell == null) return null;
-        return switch (cell.getCellType()) {
-            case NUMERIC -> cell.getNumericCellValue();
-            case STRING -> Double.valueOf(cell.getStringCellValue());
-            default -> null;
-        };
+        switch (cell.getCellType()) {
+            case NUMERIC:
+                return cell.getNumericCellValue();
+            case STRING:
+                try {
+                    return Double.valueOf(cell.getStringCellValue());
+                } catch (NumberFormatException e) {
+                    return null;
+                }
+            case FORMULA:
+                // 先计算公式，再按结果类型取值
+                CellValue cv = evaluator.evaluate(cell);
+                if (cv.getCellType() == CellType.NUMERIC) {
+                    return cv.getNumberValue();
+                } else if (cv.getCellType() == CellType.STRING) {
+                    try {
+                        return Double.valueOf(cv.getStringValue());
+                    } catch (NumberFormatException e) {
+                        return null;
+                    }
+                } else {
+                    return null;
+                }
+            default:
+                return null;
+        }
     }
+
 
     /**
      * 获取材料分页数据

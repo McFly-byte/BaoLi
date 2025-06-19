@@ -24,16 +24,16 @@ import java.util.zip.ZipInputStream;
 public class WpsFloatedImageExtractor {
 
     public static void main(String[] args) throws Exception {
-        byte[] data = Files.readAllBytes(new File("D:\\_Temp_MingchengL\\IDEA_proj\\pricer\\test2.xlsx").toPath());
-        Map<String, XSSFPictureData> pics = getPictures(data);
-        for (Map.Entry<String, XSSFPictureData> e : pics.entrySet()) {
-            String id = e.getKey();
-            XSSFPictureData pic = e.getValue();
-            String ext = pic.suggestFileExtension();
-            File out = new File(id + "." + ext);
-            Files.write(out.toPath(), pic.getData());
-            System.out.println("Extracted: " + id + " -> " + out.getName());
-        }
+//        byte[] data = Files.readAllBytes(new File("D:\\_Temp_MingchengL\\IDEA_proj\\pricer\\test2.xlsx").toPath());
+//        Map<String, XSSFPictureData> pics = getPictures(data);
+//        for (Map.Entry<String, XSSFPictureData> e : pics.entrySet()) {
+//            String id = e.getKey();
+//            XSSFPictureData pic = e.getValue();
+//            String ext = pic.suggestFileExtension();
+//            File out = new File(id + "." + ext);
+//            Files.write(out.toPath(), pic.getData());
+//            System.out.println("Extracted: " + id + " -> " + out.getName());
+//        }
     }
 
     public static Map<String, XSSFPictureData> getPictures(byte[] data) throws Exception {

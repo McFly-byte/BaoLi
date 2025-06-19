@@ -4,6 +4,7 @@ import com.baoli.pricer.dto.PageResult;
 import com.baoli.pricer.pojo.Material;
 import com.baoli.pricer.pojo.ProcessMethod;
 import com.baoli.pricer.service.MethodService;
+import com.github.pagehelper.PageInfo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -42,10 +43,10 @@ public class MethodController {
      * 分页获取材料列表
      */
     @GetMapping(value="/page")
-    public ResponseEntity<PageResult<ProcessMethod>> page(
+    public ResponseEntity<PageInfo<ProcessMethod>> getALLByPage(
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "size", defaultValue = "10") int size) {
-        PageResult<ProcessMethod> result = service.list(page, size);
+        PageInfo<ProcessMethod> result = service.getALLByPage(page, size);
         return ResponseEntity.ok(result);
     }
 
@@ -54,8 +55,11 @@ public class MethodController {
      * GET /api/method/blurSearch?keyword=xxx
      */
     @GetMapping("/blurSearch")
-    public ResponseEntity<List<ProcessMethod>> searchMethods(@RequestParam("keyword") String keyword) {
-        List<ProcessMethod> results = service.searchMethods(keyword);
+    public ResponseEntity<PageInfo<ProcessMethod>> getByKeyword(
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam("keyword") String keyword) {
+        PageInfo<ProcessMethod> results = service.getByKeyword(page, size, keyword);
         return ResponseEntity.ok(results);
     }
 
@@ -64,17 +68,23 @@ public class MethodController {
      * 按材料品类查询列表
      */
     @GetMapping("/by-category")
-    public ResponseEntity<List<ProcessMethod>> getByCategory(@RequestParam("category") String category) {
-        List<ProcessMethod> list = service.getByCategory(category);
-        return ResponseEntity.ok(list);
+    public ResponseEntity<PageInfo<ProcessMethod>> getByCategory(
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam("category") String category ) {
+        PageInfo<ProcessMethod> result = service.getByCategory(page, size, category);
+        return ResponseEntity.ok(result);
     }
 
     /**
      *  查找所有不同的材料品类
      */
     @GetMapping("/categories")
-    public ResponseEntity<List<String>> getALlCategory() {
-        List<String> list = service.getAllCategory();
-        return ResponseEntity.ok(list);
+    public ResponseEntity<PageInfo<String>> getAllCategories(
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size
+    ) {
+        PageInfo<String> result = service.getAllCategories(page, size);
+        return ResponseEntity.ok(result);
     }
 }

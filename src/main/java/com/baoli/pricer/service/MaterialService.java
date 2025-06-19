@@ -5,6 +5,8 @@ import com.baoli.pricer.pojo.Material;
 import com.baoli.pricer.mapper.MaterialMapper;
 import com.baoli.pricer.pojo.ProcessMethod;
 import com.baoli.pricer.utils.WpsFloatedImageExtractor;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
@@ -78,6 +80,7 @@ public class MaterialService {
                     }
 
 //                    notifyProgress(taskId, ++processed, totalRows);
+                    ++processed;
                     if (processed % 5 == 0) { // 每5行推送一次，减少频率
                         notifyProgress(taskId, processed, totalRows);
                     }
@@ -175,39 +178,44 @@ public class MaterialService {
      * @param page 1-based 页码
      * @param size 每页记录数
      */
-    public PageResult<Material> list(int page, int size) {
-        if (page < 1) page = 1;
-        if (size < 1) size = 10;
+    public PageInfo<Material> findALLByPage(int page, int size) {
+        PageHelper.startPage(page, size);
+        List<Material> list = mapper.getALLByPage();
 
-        int offset = (page - 1) * size;
-        List<Material> list = mapper.findByPage(offset, size);
-        long total = mapper.countAll();
+        return new PageInfo<>(list);
+    }
 
-        return new PageResult<>(total, page, size, list);
+
+
+    /**
+     * 模糊查询材料名称
+     *
+     */
+    public PageInfo<Material> getByKeyword(int page, int size, String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return new PageInfo<>(List.of());
+        }
+        PageHelper.startPage(page, size);
+        List<Material> list = mapper.getByKeyword(keyword);
+        return new PageInfo<>(list);
     }
 
     /**
-     * 根据材料品类查询 Material 列表
+     * 根据材料品类检索
      * @param category 材料品类
      */
-    public List<Material> getByCategory(String category) {
-        return mapper.findByCategory(category);
-    }
-
-    /**
-     * 模糊查询施工工艺或材料品类
-     */
-    public List<Material> searchMethods(String keyword) {
-        if (keyword == null || keyword.isBlank()) {
-            return List.of();
-        }
-        return mapper.searchByKeyword(keyword.trim());
+    public PageInfo<Material> getByCategory(int page, int size, String category) {
+        PageHelper.startPage(page, size);
+        List<Material> list = mapper.getByCategory(category);
+        return new PageInfo<>(list);
     }
 
     /**
      *  查找所有不同的材料品类
      */
-    public List<String> getAllCategory() {
-        return mapper.findAllCategory();
+    public PageInfo<String> getAllCategories(int page, int size) {
+        PageHelper.startPage(page, size);
+        List<String> list= mapper.getAllCategories();
+        return new PageInfo<>(list);
     }
 }

@@ -29,33 +29,38 @@ public interface MaterialMapper {
     @Select("SELECT COUNT(*) FROM baoli.material")
     int countAll();
 
-
-
     /**
-     * 分页查询
-     * @param offset 偏移量 = (page-1)*size
-     * @param limit  每页大小
+     * 分页查询material表中所有数据
      */
-    @Select("SELECT material_category, material_name, photo_daban, photo_chengpin, photo_xiaoguo, price, id "
-            + "FROM baoli.material "
-            + "ORDER BY id "
-            + "LIMIT #{limit} OFFSET #{offset}")
-    List<Material> findByPage(@Param("offset") int offset, @Param("limit") int limit);
+    @Select("SELECT * FROM baoli.material ORDER BY id" )
+    List<Material> getALLByPage();
 
     /** 模糊匹配查询：根据关键字查询材料 */
-    List<Material> searchByKeyword(@Param("keyword") String keyword);
+    List<Material> getByKeyword(@Param("keyword") String keyword);
 
     /**
-     * 根据材料品类精确或模糊检索
+     * 根据材料品类检索
      */
-    @Select("SELECT id, material_category, material_name, photo_daban, photo_chengpin, photo_xiaoguo, price " +
+    @Select("SELECT * " +
             "FROM baoli.material " +
             "WHERE material_category = #{category}")
-    List<Material> findByCategory(@Param("category") String category);
+    List<Material> getByCategory(@Param("category") String category);
 
     /**
     *  查找所有不同的材料品类
     */
     @Select("SELECT distinct material_category FROM baoli.material")
-    List<String> findAllCategory();
+    List<String> getAllCategories();
+
+    /**
+     * 按id查找单条
+     */
+    @Select("SELECT * FROM baoli.material WHERE id = #{id}")
+    Material findById(@Param("id") int id);
+
+    /**
+     * 按多个 id 查询 Material 列表
+     */
+    List<Material> findByIds(@Param("ids") List<Integer> ids);
+
 }

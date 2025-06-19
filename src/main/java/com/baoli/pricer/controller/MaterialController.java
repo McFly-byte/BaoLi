@@ -4,6 +4,7 @@ import com.baoli.pricer.dto.PageResult;
 import com.baoli.pricer.pojo.Material;
 import com.baoli.pricer.pojo.ProcessMethod;
 import com.baoli.pricer.service.MaterialService;
+import com.github.pagehelper.PageInfo;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -21,10 +22,10 @@ import java.util.UUID;
 @RequestMapping("/api/files")
 public class MaterialController {
 
-    private final MaterialService materialService;
+    private final MaterialService service;
 
-    public MaterialController(MaterialService materialService) {
-        this.materialService = materialService;
+    public MaterialController(MaterialService service) {
+        this.service = service;
     }
 
     /**
@@ -36,7 +37,7 @@ public class MaterialController {
         // 1. 生成任务 ID
         String taskId = UUID.randomUUID().toString();
         // 2. 异步执行
-        materialService.asyncImportMaterials(taskId, file);
+        service.asyncImportMaterials(taskId, file);
         // 3. 立即返回给前端
         return ResponseEntity.ok(Map.of("taskId", taskId));
     }
@@ -46,10 +47,10 @@ public class MaterialController {
      * GET /api/files?page=1&size=20
      */
     @GetMapping(value="/page")
-    public ResponseEntity<PageResult<Material>> page(
+    public  ResponseEntity<PageInfo<Material>> page(
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "size", defaultValue = "10") int size) {
-        PageResult<Material> result = materialService.list(page, size);
+        PageInfo<Material> result = service.findALLByPage(page, size);
         return ResponseEntity.ok(result);
     }
 
@@ -57,8 +58,11 @@ public class MaterialController {
      * 模糊查询接口
      */
     @GetMapping("/blurSearch")
-    public ResponseEntity<List<Material>> searchMethods(@RequestParam("keyword") String keyword) {
-        List<Material> results = materialService.searchMethods(keyword);
+    public ResponseEntity<PageInfo<Material>> getByKeyword(
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam("keyword") String keyword) {
+        PageInfo<Material> results = service.getByKeyword(page, size, keyword);
         return ResponseEntity.ok(results);
     }
 
@@ -67,30 +71,25 @@ public class MaterialController {
      * 按材料品类查询列表
      */
     @GetMapping("/by-category")
-    public ResponseEntity<List<Material>> getByCategory(@RequestParam("category") String category) {
-        List<Material> list = materialService.getByCategory(category);
-        return ResponseEntity.ok(list);
+    public ResponseEntity<PageInfo<Material>> getByCategory(
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam("category") String category ) {
+        PageInfo<Material> result = service.getByCategory(page, size, category);
+        return ResponseEntity.ok(result);
     }
 
     /**
      *  查找所有不同的材料品类
      */
     @GetMapping("/categories")
-    public ResponseEntity<List<String>> getALlCategory() {
-        List<String> list = materialService.getAllCategory();
-        return ResponseEntity.ok(list);
+    public ResponseEntity<PageInfo<String>> getAllCategories(
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size
+            ) {
+        PageInfo<String> result = service.getAllCategories(page, size);
+        return ResponseEntity.ok(result);
     }
 
-
-//    // 接收并上传单张图片
-//    @PostMapping("/upload")
-//    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
-//        try {
-//            String fileUrl = fileService.uploadFile(file);
-//            return ResponseEntity.ok(fileUrl);
-//        } catch (Exception e) {
-//            return ResponseEntity.status(500).body("上传失败：" + e.getMessage());
-//        }
-//    }
 }
 

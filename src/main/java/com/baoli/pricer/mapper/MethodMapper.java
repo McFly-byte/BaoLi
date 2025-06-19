@@ -5,7 +5,6 @@
  **/
 package com.baoli.pricer.mapper;
 
-import com.baoli.pricer.pojo.Material;
 import com.baoli.pricer.pojo.ProcessMethod;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -25,29 +24,39 @@ public interface MethodMapper {
     int countAll();
 
     /**
-     * 分页查询
-     * @param offset 偏移量 = (page-1)*size
-     * @param limit  每页大小
+     * 分页查询所有工艺
      */
-    @Select("SELECT id, material_category, method, price "
-            + "FROM baoli.process_method "
-            + "ORDER BY id "
-            + "LIMIT #{limit} OFFSET #{offset}")
-    List<ProcessMethod> findByPage(@Param("offset") int offset, @Param("limit") int limit);
+    @Select("SELECT * FROM baoli.process_method ORDER BY id")
+    List<ProcessMethod> getALLByPage();
 
-    /** 模糊匹配查询：根据关键字查询材料品类或施工工艺 */
-    List<ProcessMethod> searchByKeyword(@Param("keyword") String keyword);
+    /**
+     * 模糊匹配查询：根据关键字查询材料品类或施工工艺
+     */
+    List<ProcessMethod> getByKeyword(@Param("keyword") String keyword);
 
     /**
      * 根据材料品类精确检索
      */
-    @Select("SELECT * FROM baoli.process_method WHERE material_category = #{category}")
-    List<ProcessMethod> findByCategory(@Param("category") String category);
+    @Select("SELECT * " +
+            "FROM baoli.process_method " +
+            "WHERE material_category = #{category}")
+    List<ProcessMethod> getByCategory(@Param("category") String category);
 
     /**
      *  查找所有不同的材料品类
      */
     @Select("SELECT distinct material_category FROM baoli.process_method")
-    List<String> findAllCategory();
+    List<String> getAllCategories();
+
+    /**
+     * 按id查找单条
+     */
+    @Select("SELECT * FROM baoli.process_method WHERE id = #{id}")
+    ProcessMethod findById(@Param("id") int id);
+
+    /**
+     * 按多个 id 查询 Material 列表
+     */
+    List<ProcessMethod> findByIds(@Param("ids") List<Integer> ids);
 }
 

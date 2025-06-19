@@ -29,3 +29,9 @@ minio:
   access-key: minioadmin
   secret-key: minioadmin
   bucket: baoliphotos
+
+pagehelper:
+  helper-dialect: mysql
+  reasonable: true       # page<=0 时自动校正为 1
+  support-methods-arguments: true
+  params: count=countSql

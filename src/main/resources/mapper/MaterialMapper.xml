@@ -31,12 +31,21 @@
         </foreach>
     </insert>
 
-    <select id="searchByKeyword" parameterType="String" resultMap="BaseResultMap">
+    <select id="getByKeyword" parameterType="String" resultMap="BaseResultMap">
         SELECT id, material_category, material_name, photo_daban, photo_chengpin, photo_xiaoguo, price
         FROM baoli.material
-        WHERE material_category LIKE CONCAT('%', #{keyword}, '%')
-           OR material_name LIKE CONCAT('%', #{keyword}, '%')
+        WHERE material_name LIKE CONCAT('%', #{keyword}, '%')
         ORDER BY id
     </select>
+
+    <select id="findByIds" resultType="com.baoli.pricer.pojo.Material" parameterType="java.util.List">
+        SELECT *
+        FROM baoli.material
+        WHERE id IN
+        <foreach item="id" collection="ids" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
 
 </mapper>

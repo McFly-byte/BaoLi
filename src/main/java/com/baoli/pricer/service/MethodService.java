@@ -8,6 +8,8 @@ import com.baoli.pricer.mapper.MethodMapper;
 import com.baoli.pricer.pojo.Material;
 import com.baoli.pricer.pojo.ProcessMethod;
 import com.baoli.pricer.pojo.ProcessMethodParse;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -86,39 +88,41 @@ public class MethodService {
      * @param page 1-based 页码
      * @param size 每页记录数
      */
-    public PageResult<ProcessMethod> list(int page, int size) {
-        if (page < 1) page = 1;
-        if (size < 1) size = 10;
+    public PageInfo<ProcessMethod> getALLByPage(int page, int size) {
+        PageHelper.startPage(page, size);
+        List<ProcessMethod> list = mapper.getALLByPage();
 
-        int offset = (page - 1) * size;
-        List<ProcessMethod> list = mapper.findByPage(offset, size);
-        long total = mapper.countAll();
-
-        return new PageResult<>(total, page, size, list);
+        return new PageInfo<>(list);
     }
 
     /**
      * 模糊查询施工工艺或材料品类
      */
-    public List<ProcessMethod> searchMethods(String keyword) {
+    public PageInfo<ProcessMethod> getByKeyword(int page, int size, String keyword) {
         if (keyword == null || keyword.isBlank()) {
-            return List.of();
+            return new PageInfo<>(List.of());
         }
-        return mapper.searchByKeyword(keyword.trim());
+        PageHelper.startPage(page, size);
+        List<ProcessMethod> list = mapper.getByKeyword(keyword);
+        return new PageInfo<>(list);
     }
 
     /**
      * 根据材料品类查询 Material 列表
      * @param category 材料品类
      */
-    public List<ProcessMethod> getByCategory(String category) {
-        return mapper.findByCategory(category);
+    public PageInfo<ProcessMethod> getByCategory(int page, int size, String category) {
+        PageHelper.startPage(page, size);
+        List<ProcessMethod> list = mapper.getByCategory(category);
+        return new PageInfo<>(list);
     }
 
     /**
      *  查找所有不同的材料品类
      */
-    public List<String> getAllCategory() {
-        return mapper.findAllCategory();
+    public PageInfo<String> getAllCategories(int page, int size) {
+        PageHelper.startPage(page, size);
+        List<String> list= mapper.getAllCategories();
+        return new PageInfo<>(list);
     }
 }

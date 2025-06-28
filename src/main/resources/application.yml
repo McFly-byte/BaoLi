@@ -1,0 +1,37 @@
+spring:
+  servlet:
+    multipart:
+      max-file-size: 1GB
+      max-request-size: 1GB
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://47.115.47.145:3306/baoli?useSSL=false&characterEncoding=UTF-8&serverTimezone=UTC
+    username: baoliuser
+    password: "#ALiYun123"
+
+server:
+  port: 8000
+  address: 0.0.0.0
+
+# MyBatis 配置
+mybatis:
+  # 扫描 Mapper 接口的包
+  mapper-locations: classpath*:mapper/**/*.xml
+  # 为结果映射提供类型别名
+  type-aliases-package: com.baoli.pricer.pojo
+  # 可选：全局配置，如下示例开启驼峰映射
+  configuration:
+    map-underscore-to-camel-case: true
+
+minio:
+  endpoint: http://47.115.47.145:9000
+  access-key: minioadmin
+  secret-key: minioadmin
+  bucket: baoliphotos
+
+pagehelper:
+  helper-dialect: mysql
+  reasonable: true       # page<=0 时自动校正为 1
+  support-methods-arguments: true
+  params: count=countSql

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.baoli.pricer.mapper.MethodMapper">
+
+    <resultMap id="BaseResultMap" type="com.baoli.pricer.pojo.ProcessMethod">
+        <id column="id" property="id" />
+        <result column="material_category" property="materialCategory" />
+        <result column="method" property="method" />
+        <result column="price" property="price" />
+    </resultMap>
+
+    <insert id="insertBatch" parameterType="java.util.List">
+        INSERT INTO baoli.process_method (material_category, method, price)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.materialCategory}, #{item.method}, #{item.price})
+        </foreach>
+    </insert>
+
+    <select id="getByKeyword" parameterType="String" resultMap="BaseResultMap">
+        SELECT id, material_category, method, price
+        FROM baoli.process_method
+        WHERE method LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY id
+    </select>
+
+    <select id="findByIds" resultType="com.baoli.pricer.pojo.ProcessMethod" parameterType="java.util.List">
+        SELECT *
+        FROM baoli.process_method
+        WHERE id IN
+        <foreach item="id" collection="ids" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
+</mapper>

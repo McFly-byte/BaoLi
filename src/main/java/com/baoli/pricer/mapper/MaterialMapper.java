@@ -38,6 +38,14 @@ public interface MaterialMapper {
     /** 模糊匹配查询：根据关键字查询材料 */
     List<Material> getByKeyword(@Param("keyword") String keyword);
 
+    @Select("SELECT * FROM baoli.material " +
+            "WHERE material_category = #{category} " +
+            "AND (material_name LIKE CONCAT('%', #{keyword}, '%') " +
+            "OR material_category LIKE CONCAT('%', #{keyword}, '%')) " +
+            "ORDER BY id")
+    List<Material> getByKeywordAndCategory(@Param("keyword") String keyword, @Param("category") String category);
+
+
     /**
      * 根据材料品类检索
      */
@@ -52,6 +60,9 @@ public interface MaterialMapper {
     @Select("SELECT distinct material_category FROM baoli.material")
     List<String> getAllCategories();
 
+    @Select("SELECT distinct material_bigcategory FROM baoli.material")
+    List<String> getAllbigCategories();
+
     /**
      * 按id查找单条
      */
@@ -62,5 +73,9 @@ public interface MaterialMapper {
      * 按多个 id 查询 Material 列表
      */
     List<Material> findByIds(@Param("ids") List<Integer> ids);
+
+    List<Material> searchMaterials(@Param("keyword") String keyword,
+                                   @Param("category") String category,
+                                   @Param("bigcategory") String bigcategory);
 
 }

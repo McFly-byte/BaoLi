@@ -19,6 +19,7 @@ public class Cart {
     private String method;
     private Double methodPrice;
     private Integer quantity;
+    private String useplace;
     private Double totalPrice;   // 由数据库自动计算，可在返回中读取
     private String orderId;
     private LocalDateTime createdAt;

@@ -20,7 +20,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // 前端建立 WS 连接的端点
-        registry.addEndpoint("/ws-progress/ws").setAllowedOrigins("*");
+        registry.addEndpoint("/ws-progress/ws").setAllowedOrigins("http://localhost:8080").withSockJS();
     }
 }
 

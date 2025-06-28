@@ -5,10 +5,10 @@
 
     <insert id="addItem" parameterType="com.baoli.pricer.pojo.Cart" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO baoli.cart
-        (material_id, method_id, material_category, material_name,
+        (material_id, method_id, material_category, material_name, useplace,
          material_price, method, method_price, quantity, order_id)
         VALUES
-            (#{materialId}, #{methodId}, #{materialCategory}, #{materialName},
+            (#{materialId}, #{methodId}, #{materialCategory}, #{materialName}, #{useplace},
              #{materialPrice}, #{method}, #{methodPrice}, #{quantity}, #{orderId})
     </insert>
 

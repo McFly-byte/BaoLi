@@ -18,6 +18,9 @@ public class CartExportModel {
     @ExcelProperty("材料单价")
     private Double materialPrice;
 
+    @ExcelProperty("使用地点")
+    private String useplace;
+
     @ExcelProperty("工艺名称")
     private String method;
 

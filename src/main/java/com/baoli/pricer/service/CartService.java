@@ -138,6 +138,7 @@ public class CartService {
                 c.getMaterialCategory(),
                 c.getMaterialName(),
                 c.getMaterialPrice(),
+                c.getUseplace(),
                 c.getMethod(),
                 c.getMethodPrice(),
                 c.getQuantity(),

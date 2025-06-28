@@ -14,6 +14,7 @@ import io.minio.http.Method;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -82,7 +83,7 @@ public class MaterialService {
                 // 2. 主循环：从第2行 (r=2) 开始
                 for (int r = 2; r <= sheet.getLastRowNum(); r++) {
                     Row row = sheet.getRow(r);
-                    String name = getCellString(row == null ? null : row.getCell(2));
+                    String name = getCellString(row == null ? null : row.getCell(3));
 
                     // 2.1 判断是否为合并区域起始行
                     int finalR = r;
@@ -172,18 +173,19 @@ public class MaterialService {
                                           int r,
                                           FormulaEvaluator evaluator) throws Exception {
         Material m = new Material();
-        m.setMaterialCategory(getCellString(row.getCell(1)));
-        m.setMaterialName(getCellString(row.getCell(2)));
-        m.setPrice(getCellNumeric(row.getCell(13), evaluator));
+        m.setMaterialbigCategory(String.valueOf(row.getCell(1)));
+        m.setMaterialCategory(getCellString(row.getCell(2)));
+        m.setMaterialName(getCellString(row.getCell(3)));
+        m.setPrice(getCellNumeric(row.getCell(14), evaluator));
 
         m.setPhotoDaban(
-                uploadIfPresent(images, r, 3)
-        );
-        m.setPhotoChengpin(
                 uploadIfPresent(images, r, 4)
         );
-        m.setPhotoXiaoguo(
+        m.setPhotoChengpin(
                 uploadIfPresent(images, r, 5)
+        );
+        m.setPhotoXiaoguo(
+                uploadIfPresent(images, r, 6)
         );
         return m;
     }
@@ -224,6 +226,7 @@ public class MaterialService {
      */
     private Double getCellNumeric(Cell cell, FormulaEvaluator evaluator) {
         if (cell == null) return null;
+//        System.out.println(cell.getCellType());
         switch (cell.getCellType()) {
             case NUMERIC:
                 return cell.getNumericCellValue();
@@ -280,6 +283,15 @@ public class MaterialService {
         return new PageInfo<>(list);
     }
 
+    public PageInfo<Material> getByKeywordandcategory(int page, int size, String keyword, String category) {
+        if (keyword == null || keyword.isBlank()  || category == null || category.isBlank()) {
+            return new PageInfo<>(List.of());
+        }
+        PageHelper.startPage(page, size);
+        List<Material> list = mapper.getByKeywordAndCategory(keyword,category);
+        return new PageInfo<>(list);
+    }
+
     /**
      * 根据材料品类检索
      * @param category 材料品类
@@ -298,4 +310,17 @@ public class MaterialService {
         List<String> list= mapper.getAllCategories();
         return new PageInfo<>(list);
     }
+
+    public PageInfo<String> getAllbigCategories(int page, int size) {
+        PageHelper.startPage(page, size);
+        List<String> list= mapper.getAllbigCategories();
+        return new PageInfo<>(list);
+    }
+
+    public PageInfo<Material> searchMaterials(String keyword, String category, String bigcategory, int page, int size) {
+        PageHelper.startPage(page, size);
+        List<Material> list = mapper.searchMaterials(keyword, category, bigcategory);
+        return new PageInfo<>(list);
+    }
+
 }

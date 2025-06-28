@@ -9,6 +9,7 @@ import com.baoli.pricer.utils.SummaryCellStyleHandler;
 import com.github.pagehelper.PageInfo;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,6 +24,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/cart")
 @RequiredArgsConstructor
@@ -32,7 +34,9 @@ public class CartController {
 
     /** 单条添加 **/
     @PostMapping("/item")
-    public ResponseEntity<Integer> addItem( @RequestParam Cart cart ) {
+    public ResponseEntity<Integer> addItem( @RequestBody Cart cart ) {
+//        System.out.println(cart.toString());
+        log.info( cart.toString() );
         cartService.addItem(cart);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
@@ -137,7 +141,7 @@ public class CartController {
         CartExportModel summary = new CartExportModel();
         summary.setMaterialCategory("合计");
         summary.setTotalPrice(sum);
-        summary.setOrderId(orderId);
+//        summary.setOrderId(orderId);
         data.add(summary);
 
         // 4) 确定“合计”行的行号和“总价”列的索引

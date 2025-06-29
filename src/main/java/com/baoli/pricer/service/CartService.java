@@ -42,7 +42,7 @@ public class CartService {
     @Transactional
     public void addItem(Integer materialId, Integer methodId, Integer quantity, String orderId ) {
         // 1. 查询原表获取冗余数据
-        Material mat = materialMapper.findById(materialId);
+        Material mat = materialMapper.getById(materialId);
         ProcessMethod pm = methodMapper.findById(methodId);
 
         // 2. 构造 Cart 对象
@@ -75,7 +75,7 @@ public class CartService {
                 .map(Cart::getMethodId).collect(Collectors.toSet());
 
         // 2. 一次性批量查询
-        List<Material> mats = materialMapper.findByIds(new ArrayList<>(materialIds));
+        List<Material> mats = materialMapper.getByIds(new ArrayList<>(materialIds));
         List<ProcessMethod> pms = methodMapper.findByIds(new ArrayList<>(methodIds));
 
         // 3. 转成 Map

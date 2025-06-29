@@ -9,11 +9,12 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class Material {
     private Integer id;
-    private String materialbigCategory;
     private String materialCategory;
     private String materialName;
     private String photoDaban;     // 存放 MinIO URL
     private String photoChengpin;
     private String photoXiaoguo;
     private Double price;
+    private Integer versionId;
+    private String materialBigCategory;
 }

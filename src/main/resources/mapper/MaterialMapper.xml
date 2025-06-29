@@ -14,31 +14,91 @@
         <result column="price" property="price" />
     </resultMap>
 
-    <sql id="Columns">
-        material_category, material_name, photo_daban, photo_chengpin, photo_xiaoguo, price
+    <sql id="Columns_Insert">
+        material_big_category,
+        material_category,
+        material_name,
+        photo_daban,
+        photo_chengpin,
+        photo_xiaoguo,
+        price,
+        version_id
     </sql>
 
-    <insert id="insert" parameterType="com.baoli.pricer.pojo.Material" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO baoli.material (material_category, material_name, photo_daban, photo_chengpin, photo_xiaoguo, price)
-        VALUES (#{entity.materialCategory}, #{entity.materialName}, #{entity.photoDaban}, #{entity.photoChengpin}, #{entity.photoXiaoguo}, #{entity.price})
+<!--    insert-->
+    <insert id="insert" parameterType="com.baoli.pricer.pojo.Material"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO baoli.material (
+        <include refid="Columns_Insert"/>
+        )
+        VALUES (
+        #{materialBigCategory}, #{materialCategory}, #{materialName}, #{photoDaban},
+        #{photoChengpin}, #{photoXiaoguo}, #{price}, #{versionId}
+        )
     </insert>
 
     <insert id="insertBatch" parameterType="java.util.List">
-        INSERT INTO baoli.material (material_category,material_bigcategory, material_name, photo_daban, photo_chengpin, photo_xiaoguo, price)
+        INSERT INTO baoli.material (
+        <include refid="Columns_Insert"/>
+        )
         VALUES
         <foreach collection="list" item="item" separator=",">
-            (#{item.materialCategory}, #{item.materialbigCategory},#{item.materialName}, #{item.photoDaban}, #{item.photoChengpin}, #{item.photoXiaoguo}, #{item.price})
+            (#{item.materialBigCategory}, #{item.materialCategory}, #{item.materialName}, #{item.photoDaban}, #{item.photoChengpin}, #{item.photoXiaoguo}, #{item.price}, #{item.versionId})
         </foreach>
     </insert>
 
-    <select id="getByKeyword" parameterType="String" resultMap="BaseResultMap">
-        SELECT id, material_category, material_name, photo_daban, photo_chengpin, photo_xiaoguo, price
+
+<!--    get-->
+    <select id="getAll" resultMap="BaseResultMap">
+        SELECT * FROM baoli.material ORDER BY id
+    </select>
+
+    <select id="getByMaterialName" parameterType="String" resultMap="BaseResultMap">
+        SELECT *
         FROM baoli.material
         WHERE material_name LIKE CONCAT('%', #{keyword}, '%')
         ORDER BY id
     </select>
 
-    <select id="findByIds" resultType="com.baoli.pricer.pojo.Material" parameterType="java.util.List">
+    <select id="getByMaterialCategory" parameterType="String" resultMap="BaseResultMap">
+        SELECT *
+        FROM baoli.material
+        WHERE material_category LIKE CONCAT('%', #{keyword}, '%')
+        ORDER BY id
+    </select>
+
+    <select id="getByKeyword"
+            resultType="com.baoli.pricer.pojo.Material"
+            parameterType="map">
+        SELECT *
+        FROM baoli.material
+        WHERE
+        <trim prefixOverrides="AND |OR ">
+            <choose>
+                <!-- 当 category 不为空时，加上等值过滤再做模糊 -->
+                <when test="category != null and category != ''">
+                    material_category = #{category}
+                    AND
+                    material_name LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <!-- 否则只按 keyword 做模糊匹配 -->
+                <otherwise>
+                    material_category LIKE CONCAT('%', #{keyword}, '%')
+                </otherwise>
+            </choose>
+        </trim>
+        ORDER BY id
+    </select>
+    
+
+    <select id="getById" parameterType="Integer" resultMap="BaseResultMap">
+        SELECT *
+        FROM baoli.material
+        WHERE id = #{id}
+    </select>
+
+
+    <select id="getByIds" resultType="com.baoli.pricer.pojo.Material" parameterType="java.util.List">
         SELECT *
         FROM baoli.material
         WHERE id IN
@@ -48,18 +108,18 @@
     </select>
 
 
-    <select id="searchMaterials" resultMap="BaseResultMap">
-        SELECT id,material_bigcategory, material_category, material_name, photo_daban, photo_chengpin, photo_xiaoguo, price
+    <select id="getByTriple" resultMap="BaseResultMap">
+        SELECT *
         FROM baoli.material
         <where>
             <if test="keyword != null and keyword != ''">
-                AND material_name LIKE CONCAT('%', #{keyword}, '%')
+                AND material_name LIKE CONCAT('%', #{name}, '%')
             </if>
             <if test="category != null and category != '' and category != '全部'">
                 AND material_category = #{category}
             </if>
             <if test="bigcategory != null and bigcategory != '' and bigcategory != '全部'">
-                AND material_bigcategory = #{bigcategory}
+                AND material_big_category = #{bigcategory}
             </if>
         </where>
         ORDER BY id

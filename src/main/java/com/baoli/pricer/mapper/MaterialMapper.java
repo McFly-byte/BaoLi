@@ -6,7 +6,6 @@
 package com.baoli.pricer.mapper;
 
 import com.baoli.pricer.pojo.Material;
-import com.baoli.pricer.pojo.ProcessMethod;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -25,34 +24,32 @@ public interface MaterialMapper {
      */
     int insertBatch(@Param("list") List<Material> list);
 
-    /** 查询总记录数 */
-    @Select("SELECT COUNT(*) FROM baoli.material")
-    int countAll();
 
     /**
      * 分页查询material表中所有数据
      */
-    @Select("SELECT * FROM baoli.material ORDER BY id" )
-    List<Material> getALLByPage();
+    List<Material> getAll();
 
-    /** 模糊匹配查询：根据关键字查询材料 */
-    List<Material> getByKeyword(@Param("keyword") String keyword);
+    /** 根据材料名称模糊查询 */
+    List<Material> getByMaterialName(@Param("keyword") String keyword);
 
-    @Select("SELECT * FROM baoli.material " +
-            "WHERE material_category = #{category} " +
-            "AND (material_name LIKE CONCAT('%', #{keyword}, '%') " +
-            "OR material_category LIKE CONCAT('%', #{keyword}, '%')) " +
-            "ORDER BY id")
-    List<Material> getByKeywordAndCategory(@Param("keyword") String keyword, @Param("category") String category);
+    /** 根据材料品类模糊查询 */
+    List<Material> getByMaterialCategory(@Param("keyword") String keyword);
+
+    /**
+     * 确定了<材料品类>就模糊查找<材料名>，否则就模糊查找<材料品类>
+     */
+    List<Material> getByKeyword(@Param("keyword") String keyword, @Param("category") String category);
 
 
     /**
-     * 根据材料品类检索
+     * 大类 + 小类 + 材料名 查询
      */
-    @Select("SELECT * " +
-            "FROM baoli.material " +
-            "WHERE material_category = #{category}")
-    List<Material> getByCategory(@Param("category") String category);
+    List<Material> getByTriple(
+            @Param("bigCategory") String bigCategory,
+            @Param("category") String category,
+            @Param("name") String name
+    );
 
     /**
     *  查找所有不同的材料品类
@@ -60,22 +57,22 @@ public interface MaterialMapper {
     @Select("SELECT distinct material_category FROM baoli.material")
     List<String> getAllCategories();
 
-    @Select("SELECT distinct material_bigcategory FROM baoli.material")
-    List<String> getAllbigCategories();
+    /**
+     * 查找所有不同的材料大类
+     */
+    @Select("SELECT distinct material_big_category FROM baoli.material")
+    List<String> getAllBigCategories();
+
 
     /**
      * 按id查找单条
      */
-    @Select("SELECT * FROM baoli.material WHERE id = #{id}")
-    Material findById(@Param("id") int id);
+    Material getById(@Param("id") int id);
 
     /**
      * 按多个 id 查询 Material 列表
      */
-    List<Material> findByIds(@Param("ids") List<Integer> ids);
+    List<Material> getByIds(@Param("ids") List<Integer> ids);
 
-    List<Material> searchMaterials(@Param("keyword") String keyword,
-                                   @Param("category") String category,
-                                   @Param("bigcategory") String bigcategory);
 
 }

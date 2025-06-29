@@ -1,9 +1,11 @@
 package com.baoli.pricer.service;
 
 import com.baoli.pricer.dto.PageResult;
+import com.baoli.pricer.mapper.VersionMapper;
 import com.baoli.pricer.pojo.Material;
 import com.baoli.pricer.mapper.MaterialMapper;
 import com.baoli.pricer.pojo.ProcessMethod;
+import com.baoli.pricer.pojo.Version;
 import com.baoli.pricer.utils.WpsFloatedImageExtractor;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -23,6 +25,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -35,30 +42,45 @@ public class MaterialService {
 
     private final MinioClient minioClient;
     private final MaterialMapper mapper;
+    private final VersionMapper versionMapper;
     private final SimpMessagingTemplate messaging;
 
 
     @Value("${minio.bucket}")
     private String bucketName;
 
-    public MaterialService(MinioClient minioClient, MaterialMapper mapper,
+    public MaterialService(MinioClient minioClient, MaterialMapper mapper, VersionMapper versionMapper,
                            SimpMessagingTemplate messaging) {
         this.minioClient = minioClient;
         this.mapper = mapper;
+        this.versionMapper = versionMapper;
         this.messaging = messaging;
     }
 
     /**
      * 解析 Excel、上传图片、持久化数据
      * 异步导入：上传后立刻返回taskId（controller中），后台执行并推送进度
-     * @param file 上传的 .xlsx 文件
+     * @param tempFile 上传的 .xlsx 文件的路径
      *
      */
     @Async
-    public void asyncImportMaterials(String taskId, MultipartFile file) {
-        log.info("开始解析文件，taskId={}", taskId);
+    public void asyncImportMaterials(String taskId, Path tempFile) throws IOException {
+        log.info("开始解析文件，taskId={}，path={}", taskId, tempFile);
+
         try {
-            byte[] bytes = file.getBytes();
+            // 建立版本信息
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm");
+            String currentTime = LocalDateTime.now().format(formatter);
+            String tempName = "material_" + currentTime;
+            Version newVersion = new Version((byte) 0, tempName,"材料表");
+            versionMapper.insert( newVersion );
+            newVersion = versionMapper.getByVersionName(tempName);
+            log.info("新版本已创建：{}", newVersion);
+            int versionId = newVersion.getId();
+
+            // 读取文件内容
+            byte[] bytes = Files.readAllBytes(tempFile);
+            // 提取图片数据
             Map<String, XSSFPictureData> images = WpsFloatedImageExtractor.getPictures(bytes);
 
             try (Workbook wb = WorkbookFactory.create(new ByteArrayInputStream(bytes))) {
@@ -98,11 +120,12 @@ public class MaterialService {
                         for (int sub = hitRegion.getFirstRow(); sub <= hitRegion.getLastRow(); sub++) {
                             Row subRow = sheet.getRow(sub);
                             if (subRow == null) continue;
-                            String spec = getCellString(subRow.getCell(6));
+                            String spec = getCellString(subRow.getCell(7)); // 规格列
                             if (spec == null || spec.isEmpty()) continue;
 
                             Material m = buildMaterialFromRow(subRow, images, sub, evaluator);
                             m.setMaterialName(mergedName + "：" + spec);
+                            m.setVersionId(versionId);
                             batch.add(m);
                             if (batch.size() >= 200) {
                                 mapper.insertBatch(batch);
@@ -119,6 +142,7 @@ public class MaterialService {
                         }
                         // 2.4 正常处理一行
                         Material m = buildMaterialFromRow(row, images, r, evaluator);
+                        m.setVersionId(versionId);
                         batch.add(m);
                         if (batch.size() >= 200) {
                             mapper.insertBatch(batch);
@@ -155,6 +179,8 @@ public class MaterialService {
                     "/topic/progress/" + taskId,
                     Map.of("error", ex.getMessage())
             );
+        } finally {
+            try { Files.deleteIfExists(tempFile); } catch (IOException ignore) {}
         }
     }
 
@@ -173,7 +199,7 @@ public class MaterialService {
                                           int r,
                                           FormulaEvaluator evaluator) throws Exception {
         Material m = new Material();
-        m.setMaterialbigCategory(String.valueOf(row.getCell(1)));
+        m.setMaterialBigCategory(String.valueOf(row.getCell(1)));
         m.setMaterialCategory(getCellString(row.getCell(2)));
         m.setMaterialName(getCellString(row.getCell(3)));
         m.setPrice(getCellNumeric(row.getCell(14), evaluator));
@@ -190,7 +216,7 @@ public class MaterialService {
         return m;
     }
 
-    // 如果有图片就上传到minIO
+    /** 如果有图片就上传到minIO */
     private String uploadIfPresent(Map<String, XSSFPictureData> images, int r, int c) throws Exception {
         String key = r + "-" + c;
         XSSFPictureData pic = images.get(key);
@@ -221,9 +247,8 @@ public class MaterialService {
         return (cell != null) ? cell.toString().trim() : null;
     }
 
-    /**
-     * 读取数值单元格，若是公式，则先评估再取值
-     */
+    /** 读取数值单元格，若是公式，则先评估再取值 */
+    // TODO 先不设置为截取2位小数，价格计算比较复杂，尽量避免引入误差
     private Double getCellNumeric(Cell cell, FormulaEvaluator evaluator) {
         if (cell == null) return null;
 //        System.out.println(cell.getCellType());
@@ -261,46 +286,59 @@ public class MaterialService {
      * @param page 1-based 页码
      * @param size 每页记录数
      */
-    public PageInfo<Material> findALLByPage(int page, int size) {
+    public PageInfo<Material> getAll(int page, int size) {
         PageHelper.startPage(page, size);
-        List<Material> list = mapper.getALLByPage();
+        List<Material> list = mapper.getAll();
 
         return new PageInfo<>(list);
     }
 
 
-
-    /**
-     * 模糊查询材料名称
-     *
-     */
-    public PageInfo<Material> getByKeyword(int page, int size, String keyword) {
+    /** 根据材料名称模糊查询 */
+    public PageInfo<Material> getByMaterialName(int page, int size, String keyword) {
         if (keyword == null || keyword.isBlank()) {
             return new PageInfo<>(List.of());
         }
         PageHelper.startPage(page, size);
-        List<Material> list = mapper.getByKeyword(keyword);
+        List<Material> list = mapper.getByMaterialName(keyword);
         return new PageInfo<>(list);
     }
 
-    public PageInfo<Material> getByKeywordandcategory(int page, int size, String keyword, String category) {
-        if (keyword == null || keyword.isBlank()  || category == null || category.isBlank()) {
+    /** 根据材料品类模糊查询 */
+    public PageInfo<Material> getByMaterialCategory(int page, int size, String keyword) {
+        if (keyword == null || keyword.isBlank()) {
             return new PageInfo<>(List.of());
         }
         PageHelper.startPage(page, size);
-        List<Material> list = mapper.getByKeywordAndCategory(keyword,category);
+        List<Material> list = mapper.getByMaterialCategory(keyword);
         return new PageInfo<>(list);
     }
 
     /**
-     * 根据材料品类检索
-     * @param category 材料品类
+     * 确定了<材料品类>就模糊查找<材料名>，否则就模糊查找<材料品类>
      */
-    public PageInfo<Material> getByCategory(int page, int size, String category) {
+    public PageInfo<Material> getByKeyword(int page, int size, String keyword, String category) {
+        if (keyword == null || keyword.isBlank()) {
+            return new PageInfo<>(List.of());
+        }
         PageHelper.startPage(page, size);
-        List<Material> list = mapper.getByCategory(category);
+        List<Material> list = mapper.getByKeyword(keyword, category);
         return new PageInfo<>(list);
     }
+
+    /**
+     * 大类 + 小类 + 材料名 查询
+     */
+    public PageInfo<Material> getByTriple(int page, int size, String bigCategory, String category, String name) {
+        if (bigCategory == null || bigCategory.isBlank() || category == null || category.isBlank() || name == null || name.isBlank()) {
+            return new PageInfo<>(List.of());
+        }
+        PageHelper.startPage(page, size);
+        List<Material> list = mapper.getByTriple(bigCategory, category, name);
+        return new PageInfo<>(list);
+    }
+
+
 
     /**
      *  查找所有不同的材料品类
@@ -311,16 +349,14 @@ public class MaterialService {
         return new PageInfo<>(list);
     }
 
-    public PageInfo<String> getAllbigCategories(int page, int size) {
+    /**
+     * 查找所有不同的材料大类
+     */
+    public PageInfo<String> getAllBigCategories(int page, int size) {
         PageHelper.startPage(page, size);
-        List<String> list= mapper.getAllbigCategories();
+        List<String> list= mapper.getAllBigCategories();
         return new PageInfo<>(list);
     }
 
-    public PageInfo<Material> searchMaterials(String keyword, String category, String bigcategory, int page, int size) {
-        PageHelper.startPage(page, size);
-        List<Material> list = mapper.searchMaterials(keyword, category, bigcategory);
-        return new PageInfo<>(list);
-    }
 
 }

@@ -14,6 +14,11 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -21,7 +26,7 @@ import java.util.UUID;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/files")
+@RequestMapping("/api/materials")
 public class MaterialController {
 
     private final MaterialService service;
@@ -34,64 +39,84 @@ public class MaterialController {
      * 上传 Excel 并解析、存库、上传图片
      * @return 直接返回任务ID
      */
-    @PostMapping(value = "/materials/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<Map<String, String>> importMaterials(@RequestParam("file") MultipartFile file) {
-        log.info("任务进入");
+    @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<Map<String, String>> importMaterials(@RequestParam("file") MultipartFile file) throws IOException {
+
         // 1. 生成任务 ID
         String taskId = UUID.randomUUID().toString();
+
+        Path tempFile = Files.createTempFile(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm")), ".xlsx");
+        file.transferTo(tempFile.toFile());
         // 2. 异步执行
-        service.asyncImportMaterials(taskId, file);
+        service.asyncImportMaterials(taskId, tempFile);
         // 3. 立即返回给前端
         return ResponseEntity.ok(Map.of("taskId", taskId));
     }
 
     /**
      * 分页获取材料列表
-     * GET /api/files?page=1&size=20
      */
-    @GetMapping(value = "/page")
-    public ResponseEntity<PageInfo<Material>> page(
+    @GetMapping(value = "/getAll")
+    public ResponseEntity<PageInfo<Material>> getAll(
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "size", defaultValue = "10") int size) {
-        PageInfo<Material> result = service.findALLByPage(page, size);
+        PageInfo<Material> result = service.getAll(page, size);
+        return ResponseEntity.ok(result);
+    }
+
+    /** 根据材料名称模糊查询 */
+    @GetMapping("/by-name")
+    public ResponseEntity<PageInfo<Material>> getByMaterialName(
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam("name") String name) {
+        if (!StringUtils.hasText(name)) { // 如果名称为空，返回400错误
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+        PageInfo<Material> result = service.getByMaterialName(page, size, name);
+        return ResponseEntity.ok(result);
+    }
+
+    /** 根据材料品类模糊查询 */
+    @GetMapping("/by-category")
+    public ResponseEntity<PageInfo<Material>> getByMaterialCategory(
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam("category") String category) {
+        if (!StringUtils.hasText(category)) { // 如果品类为空，返回400错误
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+        PageInfo<Material> result = service.getByMaterialCategory(page, size, category);
         return ResponseEntity.ok(result);
     }
 
     /**
-     * 模糊查询接口
+     * 确定了<材料品类>就模糊查找<材料名>，否则就模糊查找<材料品类>
      */
-    @GetMapping("/blurSearch")
+    @GetMapping("/by-keyword")
     public ResponseEntity<PageInfo<Material>> getByKeyword(
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "size", defaultValue = "10") int size,
-            @RequestParam("keyword") String keyword) {
-        PageInfo<Material> results = service.getByKeyword(page, size, keyword);
-        return ResponseEntity.ok(results);
-    }
-
-    @GetMapping("/SearchBykeyandcategory")
-    public ResponseEntity<PageInfo<Material>> getByKeywordandcategory(
-            @RequestParam(value = "page", defaultValue = "1") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size,
-            @RequestParam("keyword") String keyword,
-            @RequestParam("category") String category) {
-        PageInfo<Material> results = service.getByKeywordandcategory(page, size, keyword, category);
-        return ResponseEntity.ok(results);
-    }
-
-
-    /**
-     * GET /api/files/by-category?category=木饰面
-     * 按材料品类查询列表
-     */
-    @GetMapping("/by-category")
-    public ResponseEntity<PageInfo<Material>> getByCategory(
-            @RequestParam(value = "page", defaultValue = "1") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size,
-            @RequestParam("category") String category) {
-        PageInfo<Material> result = service.getByCategory(page, size, category);
+            @RequestParam(value = "keyword", required = false) String keyword,
+            @RequestParam(value = "category", required = false) String category) {
+        PageInfo<Material> result = service.getByKeyword(page, size, keyword, category);
         return ResponseEntity.ok(result);
     }
+
+    /**
+     * 大类 + 小类 + 材料名 查询
+     */
+    @GetMapping("/by-triple")
+    public ResponseEntity<PageInfo<Material>> getByTriple(
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam("bigCategory") String bigCategory,
+            @RequestParam("category") String category,
+            @RequestParam("name") String name) {
+        PageInfo<Material> result = service.getByTriple(page, size, bigCategory, category, name);
+        return ResponseEntity.ok(result);
+    }
+
 
     /**
      *  查找所有不同的材料品类
@@ -99,32 +124,20 @@ public class MaterialController {
     @GetMapping("/categories")
     public ResponseEntity<PageInfo<String>> getAllCategories(
             @RequestParam(value = "page", defaultValue = "1") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size
-            ) {
-        PageInfo<String> result = service.getAllCategories(page, size);
-        return ResponseEntity.ok(result);
+            @RequestParam(value = "size", defaultValue = "10") int size) {
+        PageInfo<String> categories = service.getAllCategories(page, size);
+        return ResponseEntity.ok(categories);
     }
 
-    @GetMapping("/bigcategories")
-    public ResponseEntity<PageInfo<String>> getAllbigCategories(
+    /**
+     * 查找所有不同的材料大类
+     */
+    @GetMapping("/big-categories")
+    public ResponseEntity<PageInfo<String>> getAllBigCategories(
             @RequestParam(value = "page", defaultValue = "1") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size
-    ) {
-        PageInfo<String> result = service.getAllbigCategories(page, size);
-        return ResponseEntity.ok(result);
-    }
-
-    @GetMapping("/search")
-    public ResponseEntity<PageInfo<Material>> searchMaterials(
-            @RequestParam(value = "keyword", required = false) String keyword,
-            @RequestParam(value = "category", required = false) String category,
-            @RequestParam(value = "bigcategory", required = false) String bigcategory,
-            @RequestParam(value = "page", defaultValue = "1") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size
-    ) {
-        log.info("搜索请求");
-        PageInfo<Material> result = service.searchMaterials(keyword, category, bigcategory, page, size);
-        return ResponseEntity.ok(result);
+            @RequestParam(value = "size", defaultValue = "10") int size) {
+        PageInfo<String> bigCategories = service.getAllBigCategories(page, size);
+        return ResponseEntity.ok(bigCategories);
     }
 
 }

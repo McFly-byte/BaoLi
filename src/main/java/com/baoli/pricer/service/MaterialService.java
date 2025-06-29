@@ -1,5 +1,6 @@
 package com.baoli.pricer.service;
 
+import com.baoli.pricer.context.VersionContextHolder;
 import com.baoli.pricer.dto.PageResult;
 import com.baoli.pricer.mapper.VersionMapper;
 import com.baoli.pricer.pojo.Material;
@@ -18,6 +19,7 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
@@ -44,6 +46,10 @@ public class MaterialService {
     private final MaterialMapper mapper;
     private final VersionMapper versionMapper;
     private final SimpMessagingTemplate messaging;
+
+    @Autowired
+    private VersionContextHolder versionContextHolder;
+
 
 
     @Value("${minio.bucket}")
@@ -287,8 +293,9 @@ public class MaterialService {
      * @param size 每页记录数
      */
     public PageInfo<Material> getAll(int page, int size) {
+        int versionId = versionContextHolder.getVersionId();
         PageHelper.startPage(page, size);
-        List<Material> list = mapper.getAll();
+        List<Material> list = mapper.getAll(versionId);
 
         return new PageInfo<>(list);
     }
@@ -299,8 +306,9 @@ public class MaterialService {
         if (keyword == null || keyword.isBlank()) {
             return new PageInfo<>(List.of());
         }
+        int versionId = versionContextHolder.getVersionId();
         PageHelper.startPage(page, size);
-        List<Material> list = mapper.getByMaterialName(keyword);
+        List<Material> list = mapper.getByMaterialName(versionId, keyword);
         return new PageInfo<>(list);
     }
 
@@ -309,8 +317,9 @@ public class MaterialService {
         if (keyword == null || keyword.isBlank()) {
             return new PageInfo<>(List.of());
         }
+        int versionId = versionContextHolder.getVersionId();
         PageHelper.startPage(page, size);
-        List<Material> list = mapper.getByMaterialCategory(keyword);
+        List<Material> list = mapper.getByMaterialCategory(versionId, keyword);
         return new PageInfo<>(list);
     }
 
@@ -321,8 +330,9 @@ public class MaterialService {
         if (keyword == null || keyword.isBlank()) {
             return new PageInfo<>(List.of());
         }
+        int versionId = versionContextHolder.getVersionId();
         PageHelper.startPage(page, size);
-        List<Material> list = mapper.getByKeyword(keyword, category);
+        List<Material> list = mapper.getByKeyword(versionId, keyword, category);
         return new PageInfo<>(list);
     }
 
@@ -333,8 +343,9 @@ public class MaterialService {
         if (bigCategory == null || bigCategory.isBlank() || category == null || category.isBlank() || name == null || name.isBlank()) {
             return new PageInfo<>(List.of());
         }
+        int versionId = versionContextHolder.getVersionId();
         PageHelper.startPage(page, size);
-        List<Material> list = mapper.getByTriple(bigCategory, category, name);
+        List<Material> list = mapper.getByTriple(versionId, bigCategory, category, name);
         return new PageInfo<>(list);
     }
 
@@ -344,8 +355,9 @@ public class MaterialService {
      *  查找所有不同的材料品类
      */
     public PageInfo<String> getAllCategories(int page, int size) {
+        int versionId = versionContextHolder.getVersionId();
         PageHelper.startPage(page, size);
-        List<String> list= mapper.getAllCategories();
+        List<String> list= mapper.getAllCategories(versionId);
         return new PageInfo<>(list);
     }
 
@@ -353,8 +365,9 @@ public class MaterialService {
      * 查找所有不同的材料大类
      */
     public PageInfo<String> getAllBigCategories(int page, int size) {
+        int versionId = versionContextHolder.getVersionId();
         PageHelper.startPage(page, size);
-        List<String> list= mapper.getAllBigCategories();
+        List<String> list= mapper.getAllBigCategories(versionId);
         return new PageInfo<>(list);
     }
 

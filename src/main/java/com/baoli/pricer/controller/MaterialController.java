@@ -59,7 +59,8 @@ public class MaterialController {
     @GetMapping(value = "/getAll")
     public ResponseEntity<PageInfo<Material>> getAll(
             @RequestParam(value = "page", defaultValue = "1") int page,
-            @RequestParam(value = "size", defaultValue = "10") int size) {
+            @RequestParam(value = "size", defaultValue = "10") int size
+    ){
         PageInfo<Material> result = service.getAll(page, size);
         return ResponseEntity.ok(result);
     }
@@ -69,7 +70,8 @@ public class MaterialController {
     public ResponseEntity<PageInfo<Material>> getByMaterialName(
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "size", defaultValue = "10") int size,
-            @RequestParam("name") String name) {
+            @RequestParam("name") String name
+    ) {
         if (!StringUtils.hasText(name)) { // 如果名称为空，返回400错误
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
         }

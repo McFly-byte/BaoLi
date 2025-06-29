@@ -50,13 +50,17 @@
 
 <!--    get-->
     <select id="getAll" resultMap="BaseResultMap">
-        SELECT * FROM baoli.material ORDER BY id
+        SELECT * FROM baoli.material
+        WHERE 1 = 1
+        <include refid="com.baoli.pricer.mapper.CommonSqlMapper.VersionFilter"/>
+        ORDER BY id
     </select>
 
     <select id="getByMaterialName" parameterType="String" resultMap="BaseResultMap">
         SELECT *
         FROM baoli.material
         WHERE material_name LIKE CONCAT('%', #{keyword}, '%')
+        <include refid="com.baoli.pricer.mapper.CommonSqlMapper.VersionFilter"/>
         ORDER BY id
     </select>
 
@@ -64,6 +68,7 @@
         SELECT *
         FROM baoli.material
         WHERE material_category LIKE CONCAT('%', #{keyword}, '%')
+        <include refid="com.baoli.pricer.mapper.CommonSqlMapper.VersionFilter"/>
         ORDER BY id
     </select>
 
@@ -87,6 +92,7 @@
                 </otherwise>
             </choose>
         </trim>
+        <include refid="com.baoli.pricer.mapper.CommonSqlMapper.VersionFilter"/>
         ORDER BY id
     </select>
     
@@ -122,6 +128,7 @@
                 AND material_big_category = #{bigcategory}
             </if>
         </where>
+        <include refid="com.baoli.pricer.mapper.CommonSqlMapper.VersionFilter"/>
         ORDER BY id
     </select>
 

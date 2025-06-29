@@ -12,21 +12,37 @@
     </resultMap>
 
     <insert id="insertBatch" parameterType="java.util.List">
-        INSERT INTO baoli.process_method (material_category, method, price)
+        INSERT INTO baoli.process_method (material_category, method, price, version_id)
         VALUES
         <foreach collection="list" item="item" separator=",">
-            (#{item.materialCategory}, #{item.method}, #{item.price})
+            (#{item.materialCategory}, #{item.method}, #{item.price}, #{versionId})
         </foreach>
     </insert>
 
-    <select id="getByKeyword" parameterType="String" resultMap="BaseResultMap">
-        SELECT id, material_category, method, price
+    <select id="getAll" resultMap="BaseResultMap">
+        SELECT *
         FROM baoli.process_method
-        WHERE method LIKE CONCAT('%', #{keyword}, '%')
+        <include refid="com.baoli.pricer.mapper.CommonSqlMapper.VersionFilter"/>
         ORDER BY id
     </select>
 
-    <select id="findByIds" resultType="com.baoli.pricer.pojo.ProcessMethod" parameterType="java.util.List">
+    <select id="getByKeyword" parameterType="String" resultMap="BaseResultMap">
+        SELECT *
+        FROM baoli.process_method
+        WHERE method LIKE CONCAT('%', #{keyword}, '%')
+        <include refid="com.baoli.pricer.mapper.CommonSqlMapper.VersionFilter"/>
+        ORDER BY id
+    </select>
+
+    <select id="getByCategory" parameterType="String" resultMap="BaseResultMap">
+        SELECT *
+        FROM baoli.process_method
+        WHERE material_category = #{category}
+        <include refid="com.baoli.pricer.mapper.CommonSqlMapper.VersionFilter"/>
+        ORDER BY id
+    </select>
+
+    <select id="getByIds" resultType="com.baoli.pricer.pojo.ProcessMethod" parameterType="java.util.List">
         SELECT *
         FROM baoli.process_method
         WHERE id IN

@@ -19,44 +19,37 @@ public interface MethodMapper {
      */
     int insertBatch(@Param("list") List<ProcessMethod> list);
 
-    /** 查询总记录数 */
-    @Select("SELECT COUNT(*) FROM baoli.process_method")
-    int countAll();
 
     /**
      * 分页查询所有工艺
      */
-    @Select("SELECT * FROM baoli.process_method ORDER BY id")
-    List<ProcessMethod> getALLByPage();
+    List<ProcessMethod> getAll(@Param("versionId") int versionId);
 
     /**
      * 模糊匹配查询：根据关键字查询材料品类或施工工艺
      */
-    List<ProcessMethod> getByKeyword(@Param("keyword") String keyword);
+    List<ProcessMethod> getByKeyword(@Param("versionId") int versionId, @Param("keyword") String keyword);
 
     /**
      * 根据材料品类精确检索
      */
-    @Select("SELECT * " +
-            "FROM baoli.process_method " +
-            "WHERE material_category = #{category}")
-    List<ProcessMethod> getByCategory(@Param("category") String category);
+    List<ProcessMethod> getByCategory(@Param("versionId") int versionId, @Param("category") String category);
 
     /**
      *  查找所有不同的材料品类
      */
-    @Select("SELECT distinct material_category FROM baoli.process_method")
-    List<String> getAllCategories();
+    @Select("SELECT distinct material_category FROM baoli.process_method WHERE version_id = #{versionId}")
+    List<String> getAllCategories(@Param("versionId") int versionId);
 
     /**
      * 按id查找单条
      */
     @Select("SELECT * FROM baoli.process_method WHERE id = #{id}")
-    ProcessMethod findById(@Param("id") int id);
+    ProcessMethod getById(@Param("id") int id);
 
     /**
      * 按多个 id 查询 Material 列表
      */
-    List<ProcessMethod> findByIds(@Param("ids") List<Integer> ids);
+    List<ProcessMethod> getByIds(@Param("ids") List<Integer> ids);
 }
 

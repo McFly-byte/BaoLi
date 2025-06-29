@@ -3,6 +3,7 @@ package com.baoli.pricer.service;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.event.AnalysisEventListener;
+import com.baoli.pricer.context.VersionContextHolder;
 import com.baoli.pricer.dto.PageResult;
 import com.baoli.pricer.mapper.MethodMapper;
 import com.baoli.pricer.pojo.Material;
@@ -25,6 +26,7 @@ import java.util.List;
 public class MethodService {
 
     private final MethodMapper mapper;
+    private final VersionContextHolder versionContextHolder;
     private static final int BATCH_SIZE = 200;
 
 
@@ -88,9 +90,10 @@ public class MethodService {
      * @param page 1-based 页码
      * @param size 每页记录数
      */
-    public PageInfo<ProcessMethod> getALLByPage(int page, int size) {
+    public PageInfo<ProcessMethod> getAll(int page, int size) {
+        int versionId = versionContextHolder.getVersionId();
         PageHelper.startPage(page, size);
-        List<ProcessMethod> list = mapper.getALLByPage();
+        List<ProcessMethod> list = mapper.getAll(versionId);
 
         return new PageInfo<>(list);
     }
@@ -102,8 +105,9 @@ public class MethodService {
         if (keyword == null || keyword.isBlank()) {
             return new PageInfo<>(List.of());
         }
+        int versionId = versionContextHolder.getVersionId();
         PageHelper.startPage(page, size);
-        List<ProcessMethod> list = mapper.getByKeyword(keyword);
+        List<ProcessMethod> list = mapper.getByKeyword(versionId, keyword);
         return new PageInfo<>(list);
     }
 
@@ -112,8 +116,9 @@ public class MethodService {
      * @param category 材料品类
      */
     public PageInfo<ProcessMethod> getByCategory(int page, int size, String category) {
+        int versionId = versionContextHolder.getVersionId();
         PageHelper.startPage(page, size);
-        List<ProcessMethod> list = mapper.getByCategory(category);
+        List<ProcessMethod> list = mapper.getByCategory(versionId, category);
         return new PageInfo<>(list);
     }
 
@@ -121,8 +126,9 @@ public class MethodService {
      *  查找所有不同的材料品类
      */
     public PageInfo<String> getAllCategories(int page, int size) {
+        int versionId = versionContextHolder.getVersionId();
         PageHelper.startPage(page, size);
-        List<String> list= mapper.getAllCategories();
+        List<String> list= mapper.getAllCategories(versionId);
         return new PageInfo<>(list);
     }
 }

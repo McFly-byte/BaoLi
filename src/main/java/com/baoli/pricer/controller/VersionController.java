@@ -5,10 +5,12 @@ import com.baoli.pricer.pojo.Version;
 import com.baoli.pricer.service.VersionService;
 import com.github.pagehelper.PageInfo;
 import jakarta.servlet.http.HttpSession;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/version")
 public class VersionController {
@@ -26,8 +28,8 @@ public class VersionController {
         if (version == null) {
             return ResponseEntity.badRequest().build(); // 或返回带错误信息的 ResponseEntity
         }
-
         session.setAttribute("versionId", versionId);
+        log.info( versionId + " 版本已激活");
         return ResponseEntity.ok().build();
     }
 
@@ -85,8 +87,8 @@ public class VersionController {
     @PutMapping("/updateById")
     public ResponseEntity<Boolean> updateById(
             @RequestParam int id,
-            @RequestParam String versionName,
-            @RequestParam String description) {
+            @RequestParam(value="name", required = false) String versionName,
+            @RequestParam(value="description", required = false) String description) {
         boolean updated = versionService.updateById(id, versionName, description);
         if (updated) {
             return ResponseEntity.ok(true);
@@ -104,7 +106,4 @@ public class VersionController {
             return ResponseEntity.status(500).body(false); // 删除失败
         }
     }
-
-
-
 }

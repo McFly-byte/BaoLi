@@ -6,6 +6,7 @@ import com.baoli.pricer.pojo.ProcessMethod;
 import com.baoli.pricer.service.MaterialService;
 import com.github.pagehelper.Page;
 import com.github.pagehelper.PageInfo;
+import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -112,9 +113,9 @@ public class MaterialController {
     public ResponseEntity<PageInfo<Material>> getByTriple(
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "size", defaultValue = "10") int size,
-            @RequestParam("bigCategory") String bigCategory,
-            @RequestParam("category") String category,
-            @RequestParam("name") String name) {
+            @RequestParam(value = "bigCategory", required = false) String bigCategory,
+            @RequestParam(value = "category",required = false) String category,
+            @RequestParam(value = "name",required = false) String name) {
         PageInfo<Material> result = service.getByTriple(page, size, bigCategory, category, name);
         return ResponseEntity.ok(result);
     }

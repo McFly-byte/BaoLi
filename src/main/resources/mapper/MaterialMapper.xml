@@ -56,7 +56,7 @@
         ORDER BY id
     </select>
 
-    <select id="getByMaterialName" parameterType="String" resultMap="BaseResultMap">
+    <select id="getByMaterialName" parameterType="map" resultMap="BaseResultMap">
         SELECT *
         FROM baoli.material
         WHERE material_name LIKE CONCAT('%', #{keyword}, '%')
@@ -64,7 +64,7 @@
         ORDER BY id
     </select>
 
-    <select id="getByMaterialCategory" parameterType="String" resultMap="BaseResultMap">
+    <select id="getByMaterialCategory" parameterType="map" resultMap="BaseResultMap">
         SELECT *
         FROM baoli.material
         WHERE material_category LIKE CONCAT('%', #{keyword}, '%')
@@ -118,14 +118,14 @@
         SELECT *
         FROM baoli.material
         <where>
-            <if test="keyword != null and keyword != ''">
+            <if test="name != null and name != ''">
                 AND material_name LIKE CONCAT('%', #{name}, '%')
             </if>
             <if test="category != null and category != '' and category != '全部'">
                 AND material_category = #{category}
             </if>
-            <if test="bigcategory != null and bigcategory != '' and bigcategory != '全部'">
-                AND material_big_category = #{bigcategory}
+            <if test="bigCategory != null and bigCategory != '' and bigCategory != '全部'">
+                AND material_big_category = #{bigCategory}
             </if>
         </where>
         <include refid="com.baoli.pricer.mapper.CommonSqlMapper.VersionFilter"/>

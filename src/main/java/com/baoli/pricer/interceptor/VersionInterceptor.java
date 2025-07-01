@@ -1,5 +1,6 @@
 package com.baoli.pricer.interceptor;
 
+import com.baoli.pricer.context.CustomContextHolder;
 import com.baoli.pricer.context.VersionContextHolder;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -18,14 +19,17 @@ public class VersionInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            Object vid = session.getAttribute("versionId");
-            if (vid instanceof Integer versionId) {
-                versionContextHolder.setVersionId(versionId);
-            }
-        }
-        return true; // 放行
+//        HttpSession session = request.getSession(false);
+//        if (session != null) {
+//            Object vid = session.getAttribute("versionId");
+//            if (vid instanceof Integer versionId) {
+//                versionContextHolder.setVersionId(versionId);
+//            }
+//        }
+//        return true; // 放行
+        String headerValue = request.getHeader("versionid");
+        CustomContextHolder.set(headerValue);
+        return true;
     }
 
     @Override

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.baoli.pricer.mapper.MaterialMapper">
+
+    <resultMap id="BaseResultMap" type="com.baoli.pricer.pojo.Material">
+        <id column="id" property="id" />
+        <result column="material_category" property="materialCategory" />
+        <result column="material_name" property="materialName" />
+        <result column="photo_daban" property="photoDaban" />
+        <result column="photo_chengpin" property="photoChengpin" />
+        <result column="photo_xiaoguo" property="photoXiaoguo" />
+        <result column="price" property="price" />
+    </resultMap>
+
+    <sql id="Columns_Insert">
+        material_big_category,
+        material_category,
+        material_name,
+        photo_daban,
+        photo_chengpin,
+        photo_xiaoguo,
+        price,
+        version_id
+    </sql>
+
+<!--    insert-->
+    <insert id="insert" parameterType="com.baoli.pricer.pojo.Material"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO baoli.material (
+        <include refid="Columns_Insert"/>
+        )
+        VALUES (
+        #{materialBigCategory}, #{materialCategory}, #{materialName}, #{photoDaban},
+        #{photoChengpin}, #{photoXiaoguo}, #{price}, #{versionId}
+        )
+    </insert>
+
+    <insert id="insertBatch" parameterType="java.util.List">
+        INSERT INTO baoli.material (
+        <include refid="Columns_Insert"/>
+        )
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.materialBigCategory}, #{item.materialCategory}, #{item.materialName}, #{item.photoDaban}, #{item.photoChengpin}, #{item.photoXiaoguo}, #{item.price}, #{item.versionId})
+        </foreach>
+    </insert>
+
+
+<!--    get-->
+    <select id="getAll" resultMap="BaseResultMap">
+        SELECT * FROM baoli.material
+        WHERE 1 = 1
+        <include refid="com.baoli.pricer.mapper.CommonSqlMapper.VersionFilter"/>
+        ORDER BY id
+    </select>
+
+    <select id="getByMaterialName" parameterType="map" resultMap="BaseResultMap">
+        SELECT *
+        FROM baoli.material
+        WHERE material_name LIKE CONCAT('%', #{keyword}, '%')
+        <include refid="com.baoli.pricer.mapper.CommonSqlMapper.VersionFilter"/>
+        ORDER BY id
+    </select>
+
+    <select id="getByMaterialCategory" parameterType="map" resultMap="BaseResultMap">
+        SELECT *
+        FROM baoli.material
+        WHERE material_category LIKE CONCAT('%', #{keyword}, '%')
+        <include refid="com.baoli.pricer.mapper.CommonSqlMapper.VersionFilter"/>
+        ORDER BY id
+    </select>
+
+    <select id="getByKeyword"
+            resultType="com.baoli.pricer.pojo.Material"
+            parameterType="map">
+        SELECT *
+        FROM baoli.material
+        WHERE
+        <trim prefixOverrides="AND |OR ">
+            <choose>
+                <!-- 当 category 不为空时，加上等值过滤再做模糊 -->
+                <when test="category != null and category != ''">
+                    material_category = #{category}
+                    AND
+                    material_name LIKE CONCAT('%', #{keyword}, '%')
+                </when>
+                <!-- 否则只按 keyword 做模糊匹配 -->
+                <otherwise>
+                    material_category LIKE CONCAT('%', #{keyword}, '%')
+                </otherwise>
+            </choose>
+        </trim>
+        <include refid="com.baoli.pricer.mapper.CommonSqlMapper.VersionFilter"/>
+        ORDER BY id
+    </select>
+    
+
+    <select id="getById" parameterType="Integer" resultMap="BaseResultMap">
+        SELECT *
+        FROM baoli.material
+        WHERE id = #{id}
+    </select>
+
+
+    <select id="getByIds" resultType="com.baoli.pricer.pojo.Material" parameterType="java.util.List">
+        SELECT *
+        FROM baoli.material
+        WHERE id IN
+        <foreach item="id" collection="ids" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </select>
+
+
+    <select id="getByTriple" resultMap="BaseResultMap">
+        SELECT *
+        FROM baoli.material
+        <where>
+            <if test="name != null and name != ''">
+                AND material_name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="category != null and category != '' and category != '全部'">
+                AND material_category = #{category}
+            </if>
+            <if test="bigCategory != null and bigCategory != '' and bigCategory != '全部'">
+                AND material_big_category = #{bigCategory}
+            </if>
+        </where>
+        <include refid="com.baoli.pricer.mapper.CommonSqlMapper.VersionFilter"/>
+        ORDER BY id
+    </select>
+
+
+
+
+</mapper>

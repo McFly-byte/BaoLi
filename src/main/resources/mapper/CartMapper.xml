@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.baoli.pricer.mapper.CartMapper">
+
+    <insert id="addItem" parameterType="com.baoli.pricer.pojo.Cart" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO baoli.cart
+        (material_id, method_id, material_category, material_name, useplace,
+         material_price, method, method_price, quantity, order_id)
+        VALUES
+            (#{materialId}, #{methodId}, #{materialCategory}, #{materialName}, #{useplace},
+             #{materialPrice}, #{method}, #{methodPrice}, #{quantity}, #{orderId})
+    </insert>
+
+    <insert id="insertBatch" parameterType="java.util.List">
+        INSERT INTO baoli.cart
+        (material_id, method_id, material_category, material_name,
+        material_price, method, method_price, quantity, order_id)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.materialId}, #{item.methodId}, #{item.materialCategory}, #{item.materialName},
+            #{item.materialPrice}, #{item.method}, #{item.methodPrice}, #{item.quantity}, #{item.orderId})
+        </foreach>
+    </insert>
+
+    <delete id="deleteById">
+        DELETE FROM baoli.cart WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteByOrderId">
+        DELETE FROM baoli.cart WHERE order_id = #{orderId}
+    </delete>
+
+    <delete id="deleteBatchIds">
+        DELETE FROM baoli.cart WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <delete id="deleteBatchOrderIds">
+        DELETE FROM baoli.cart WHERE order_id IN
+        <foreach collection="orderIds" item="oid" open="(" separator="," close=")">
+            #{oid}
+        </foreach>
+    </delete>
+
+    <select id="selectByOrderId" resultType="com.baoli.pricer.pojo.Cart">
+        SELECT * FROM baoli.cart WHERE order_id = #{orderId}
+    </select>
+
+    <select id="selectByMaterialOrMethod" resultType="com.baoli.pricer.pojo.Cart">
+        SELECT * FROM baoli.cart
+        <where>
+            <if test="material != null and material != ''">
+                material_name LIKE CONCAT('%', #{material}, '%')
+            </if>
+            <if test="method != null and method != ''">
+                <if test="material != null and material != ''">
+                    AND
+                </if>
+                method LIKE CONCAT('%', #{method}, '%')
+            </if>
+        </where>
+    </select>
+
+</mapper>

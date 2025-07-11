@@ -11,17 +11,27 @@
         <result column="price" property="price" />
     </resultMap>
 
+    <sql id="Columns_Insert">
+        material_category,
+        method,
+        price,
+        version_id
+    </sql>
+
     <insert id="insertBatch" parameterType="java.util.List">
-        INSERT INTO baoli.process_method (material_category, method, price, version_id)
+        INSERT INTO baoli.process_method (
+        <include refid="Columns_Insert"/>
+        )
         VALUES
         <foreach collection="list" item="item" separator=",">
-            (#{item.materialCategory}, #{item.method}, #{item.price}, #{versionId})
+            (#{item.materialCategory}, #{item.method}, #{item.price}, #{item.versionId})
         </foreach>
     </insert>
 
     <select id="getAll" resultMap="BaseResultMap">
         SELECT *
         FROM baoli.process_method
+        WHERE 1=1
         <include refid="com.baoli.pricer.mapper.CommonSqlMapper.VersionFilter"/>
         ORDER BY id
     </select>

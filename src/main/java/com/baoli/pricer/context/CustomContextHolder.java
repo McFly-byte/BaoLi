@@ -5,15 +5,14 @@ import org.springframework.stereotype.Component;
 // 创建 CustomContextHolder.java
 @Component
 public class CustomContextHolder {
-    
-    private static final ThreadLocal<String> customFieldHolder = new ThreadLocal<>();
+    private static final ThreadLocal<String> THREAD_VERSION = new ThreadLocal<>();
 
     public static void set(String value) {
-        customFieldHolder.set(value);
+        THREAD_VERSION.set(value);
     }
 
     public static String get() {
-        String id = customFieldHolder.get();
+        String id = THREAD_VERSION.get();
         if (id == null) {
             throw new IllegalStateException("VersionId 未设置，请确保调用前设置了版本");
         }
@@ -21,6 +20,6 @@ public class CustomContextHolder {
     }
 
     public static void clear() {
-        customFieldHolder.remove();
+        THREAD_VERSION.remove();
     }
 }

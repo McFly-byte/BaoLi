@@ -29,7 +29,7 @@ public class VersionController {
             return ResponseEntity.badRequest().build(); // 或返回带错误信息的 ResponseEntity
         }
         session.setAttribute("versionId", versionId);
-        log.info( versionId + " 版本已激活");
+        log.info("{} 版本已激活", versionId);
         return ResponseEntity.ok().build();
     }
 

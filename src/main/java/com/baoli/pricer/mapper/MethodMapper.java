@@ -6,6 +6,7 @@
 package com.baoli.pricer.mapper;
 
 import com.baoli.pricer.pojo.ProcessMethod;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -51,5 +52,11 @@ public interface MethodMapper {
      * 按多个 id 查询 Material 列表
      */
     List<ProcessMethod> getByIds(@Param("ids") List<Integer> ids);
+
+    /**
+     * 删除指定版本的所有工艺
+     */
+    @Delete("DELETE FROM baoli.process_method WHERE version_id = #{versionId}")
+    int deleteByVersionId(@Param("versionId") int versionId);
 }
 

@@ -1,11 +1,14 @@
 package com.baoli.pricer.service;
 
+import com.baoli.pricer.mapper.MaterialMapper;
+import com.baoli.pricer.mapper.MethodMapper;
 import com.baoli.pricer.pojo.Material;
 import com.baoli.pricer.pojo.Version;
 import com.baoli.pricer.mapper.VersionMapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import lombok.extern.slf4j.Slf4j;
+import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +20,10 @@ public class VersionService {
 
     @Autowired
     private VersionMapper mapper;
+    @Autowired
+    private MethodMapper methodMapper;
+    @Autowired
+    private MaterialMapper materialMapper;
 
     /**
      * 插入一条新版本，插入后会自动回填到 version.id
@@ -103,12 +110,19 @@ public class VersionService {
      * 根据 id 删除版本记录
      */
     public boolean deleteById(int id) {
+        Version version = mapper.getById(id);
         int rows = mapper.deleteById(id);
-        if (rows > 0) {
-            log.info("版本删除成功，ID: {}", id);
+        if (rows > 0) { // 删除版本时，如果是正式版本，还需要删除对应的材料
+            if ( version.getFlag() == 1 ) {
+                rows = methodMapper.deleteByVersionId(id);
+            }
+            else {
+                rows = materialMapper.deleteByVersionId(id);
+            }
+            log.info("成功删除{}条记录，版本ID: {}", rows, id);
             return true;
         } else {
-            log.error("版本删除失败，ID: {}", id);
+            log.info("版本删除失败，当前没有此版本，ID: {}", id);
             return false;
         }
     }

@@ -6,6 +6,7 @@
 package com.baoli.pricer.mapper;
 
 import com.baoli.pricer.pojo.Material;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -38,6 +39,9 @@ public interface MaterialMapper {
 
     /**
      * 确定了<材料品类>就模糊查找<材料名>，否则就模糊查找<材料品类>
+     * @param versionId 版本ID
+     * @param keyword 材料品类，如果不为空，则按品类查询，否则按材料名查询
+     * @param category
      */
     List<Material> getByKeyword(
             @Param("versionId") int versionId,
@@ -63,11 +67,26 @@ public interface MaterialMapper {
     List<String> getAllCategories(@Param("versionId") int versionId );
 
     /**
+     * 根据材料大类查找所有不同的材料品类
+     */
+    @Select("SELECT distinct material_category FROM baoli.material WHERE version_id = #{versionId} AND material_big_category = #{bigCategory}")
+    List<String> getAllCategoriesByBigCategory(
+            @Param("versionId") int versionId,
+            @Param("bigCategory") String bigCategory
+    );
+
+    /**
      * 查找所有不同的材料大类
      */
     @Select("SELECT distinct material_big_category FROM baoli.material WHERE version_id = #{versionId}")
     List<String> getAllBigCategories(@Param("versionId") int versionId );
 
+
+    /**
+     * 在description字段中模糊查询
+     */
+    @Select("SELECT * FROM baoli.material WHERE version_id = #{versionId} AND description LIKE CONCAT('%', #{keyword}, '%')")
+    List<Material> getByDescription(@Param("versionId") int versionId, @Param("keyword") String keyword);
 
     /**
      * 按id查找单条
@@ -80,5 +99,7 @@ public interface MaterialMapper {
      */
     List<Material> getByIds(@Param("ids") List<Integer> ids);
 
+    @Delete("DELETE FROM baoli.material WHERE versionId = #{versionId}")
+    Integer deleteByVersionId( @Param("versionId") int versionId);
 
 }

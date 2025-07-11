@@ -47,6 +47,10 @@ public class CartController {
                                              @RequestParam Integer methodId,
                                              @RequestParam Integer quantity,
                                              @RequestParam String orderId ) {
+        // 1. 检查参数是否有效
+        if (materialId == null || methodId == null || quantity == null || orderId == null) {
+            return ResponseEntity.badRequest().body(null);
+        }
         cartService.addItem(materialId, methodId, quantity, orderId);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }

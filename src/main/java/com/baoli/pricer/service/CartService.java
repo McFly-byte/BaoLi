@@ -45,6 +45,18 @@ public class CartService {
         Material mat = materialMapper.getById(materialId);
         ProcessMethod pm = methodMapper.getById(methodId);
 
+        if (mat == null || pm == null) {
+            throw new IllegalArgumentException("无效的材料或工艺 ID");
+        }
+        if (quantity == null || quantity <= 0) {
+            throw new IllegalArgumentException("数量必须大于 0");
+        }
+        if (orderId == null || orderId.isEmpty()) {
+            throw new IllegalArgumentException("订单号不能为空");
+        }
+        // 如果 orderId 不是空字符串，则去除两端空格
+        orderId = orderId.trim();
+
         // 2. 构造 Cart 对象
         Cart cart = new Cart();
         cart.setMaterialId(materialId);
@@ -54,7 +66,7 @@ public class CartService {
         cart.setMaterialPrice(mat.getPrice());
         cart.setMethod(pm.getMethod());
         cart.setMethodPrice(pm.getPrice());
-        cart.setQuantity(quantity == null ? 1 : quantity);
+        cart.setQuantity(quantity);
         cart.setOrderId(orderId);
 
         // 3. 插入数据库
@@ -142,8 +154,7 @@ public class CartService {
                 c.getMethod(),
                 c.getMethodPrice(),
                 c.getQuantity(),
-                c.getTotalPrice(),
-                c.getOrderId()
+                c.getTotalPrice()
         )).collect(Collectors.toList());
     }
 

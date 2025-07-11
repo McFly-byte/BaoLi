@@ -133,6 +133,21 @@ public class MaterialController {
     }
 
     /**
+     * 根据材料大类查找所有不同的材料品类
+     */
+    @GetMapping("/categories/by-big-category")
+    public ResponseEntity<PageInfo<String>> getAllCategoriesByBigCategory(
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam("bigCategory") String bigCategory) {
+        if (!StringUtils.hasText(bigCategory)) { // 如果大类为空，返回400错误
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+        PageInfo<String> categories = service.getAllCategoriesByBigCategory(page, size, bigCategory);
+        return ResponseEntity.ok(categories);
+    }
+
+    /**
      * 查找所有不同的材料大类
      */
     @GetMapping("/big-categories")
@@ -141,6 +156,23 @@ public class MaterialController {
             @RequestParam(value = "size", defaultValue = "10") int size) {
         PageInfo<String> bigCategories = service.getAllBigCategories(page, size);
         return ResponseEntity.ok(bigCategories);
+    }
+
+    /**
+     * 在description字段中模糊查询
+     */
+    @GetMapping("/by-description")
+    public ResponseEntity<PageInfo<Material>> getByDescription(
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam("keyword") String keyword) {
+
+        log.info("keyword: {}", keyword);
+        if (!StringUtils.hasText(keyword)) { // 如果描述为空，返回400错误
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        }
+        PageInfo<Material> result = service.getByDescription(page, size, keyword);
+        return ResponseEntity.ok(result);
     }
 
 }

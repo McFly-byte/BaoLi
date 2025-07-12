@@ -36,7 +36,7 @@
         ORDER BY id
     </select>
 
-    <select id="getByKeyword" parameterType="String" resultMap="BaseResultMap">
+    <select id="getByKeyword" parameterType="map" resultMap="BaseResultMap">
         SELECT *
         FROM baoli.process_method
         WHERE method LIKE CONCAT('%', #{keyword}, '%')
@@ -44,7 +44,7 @@
         ORDER BY id
     </select>
 
-    <select id="getByCategory" parameterType="String" resultMap="BaseResultMap">
+    <select id="getByCategory" parameterType="map" resultMap="BaseResultMap">
         SELECT *
         FROM baoli.process_method
         WHERE material_category = #{category}

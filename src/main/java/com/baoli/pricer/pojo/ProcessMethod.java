@@ -12,4 +12,5 @@ public class ProcessMethod {
     private String materialCategory;
     private String method;
     private Double price;
+    private Integer versionId;
 }

@@ -32,7 +32,4 @@ public class CartExportModel {
 
     @ExcelProperty("总价")
     private Double totalPrice;
-
-    @ExcelProperty("订单号")
-    private String orderId;
 }

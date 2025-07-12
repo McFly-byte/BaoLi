@@ -6,12 +6,12 @@ spring:
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://47.115.47.145:3306/baoli?useSSL=false&characterEncoding=UTF-8&serverTimezone=UTC
+    url: jdbc:mysql://47.115.47.145:3306/baoli?useSSL=false&characterEncoding=UTF-8&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: baoliuser
     password: "#ALiYun123"
 
 server:
-  port: 8000
+  port: 8080
   address: 0.0.0.0
 
 # MyBatis 配置

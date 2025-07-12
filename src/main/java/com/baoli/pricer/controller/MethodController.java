@@ -43,10 +43,10 @@ public class MethodController {
      * 分页获取材料列表
      */
     @GetMapping(value="/page")
-    public ResponseEntity<PageInfo<ProcessMethod>> getALLByPage(
+    public ResponseEntity<PageInfo<ProcessMethod>> getAll(
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "size", defaultValue = "10") int size) {
-        PageInfo<ProcessMethod> result = service.getALLByPage(page, size);
+        PageInfo<ProcessMethod> result = service.getAll(page, size);
         return ResponseEntity.ok(result);
     }
 

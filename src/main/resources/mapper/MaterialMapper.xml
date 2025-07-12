@@ -22,7 +22,18 @@
         photo_chengpin,
         photo_xiaoguo,
         price,
-        version_id
+        version_id,
+        description
+    </sql>
+
+    <sql id="Values_Insert">
+        #{materialBigCategory}, #{materialCategory}, #{materialName}, #{photoDaban},
+        #{photoChengpin}, #{photoXiaoguo}, #{price}, #{versionId}, #{description}
+    </sql>
+
+    <sql id="Values_Insert2">
+        #{item.materialBigCategory}, #{item.materialCategory}, #{item.materialName}, #{item.photoDaban},
+        #{item.photoChengpin}, #{item.photoXiaoguo}, #{item.price}, #{item.versionId}, #{item.description}
     </sql>
 
 <!--    insert-->
@@ -32,8 +43,7 @@
         <include refid="Columns_Insert"/>
         )
         VALUES (
-        #{materialBigCategory}, #{materialCategory}, #{materialName}, #{photoDaban},
-        #{photoChengpin}, #{photoXiaoguo}, #{price}, #{versionId}
+        <include refid="Values_Insert"/>
         )
     </insert>
 
@@ -43,7 +53,9 @@
         )
         VALUES
         <foreach collection="list" item="item" separator=",">
-            (#{item.materialBigCategory}, #{item.materialCategory}, #{item.materialName}, #{item.photoDaban}, #{item.photoChengpin}, #{item.photoXiaoguo}, #{item.price}, #{item.versionId})
+            (
+            <include refid="Values_Insert2"/>
+            )
         </foreach>
     </insert>
 
@@ -131,8 +143,6 @@
         <include refid="com.baoli.pricer.mapper.CommonSqlMapper.VersionFilter"/>
         ORDER BY id
     </select>
-
-
 
 
 </mapper>

@@ -297,11 +297,9 @@ public class MaterialService {
      * @param size 每页记录数
      */
     public PageInfo<Material> getAll(int page, int size) {
-        String versionId = customContextHolder.get();
         PageHelper.startPage(page, size);
-        int id = Integer.parseInt(versionId);
-        List<Material> list = mapper.getAll(id);
-
+        int versionId = versionContextHolder.getVersionId();
+        List<Material> list = mapper.getAll(versionId);
         return new PageInfo<>(list);
     }
 
@@ -311,8 +309,7 @@ public class MaterialService {
         if (keyword == null || keyword.isBlank()) {
             return new PageInfo<>(List.of());
         }
-        String id = customContextHolder.get();
-        int versionId = Integer.parseInt(id);
+        int versionId = versionContextHolder.getVersionId();
         PageHelper.startPage(page, size);
         List<Material> list = mapper.getByMaterialName(versionId, keyword);
         return new PageInfo<>(list);
@@ -343,32 +340,26 @@ public class MaterialService {
     }
 
     /**
-     * 大类 + 小类 + 材料名 查询
-     */
-    public PageInfo<Material> getByTriple(int page, int size, String bigCategory, String category, String name) {
-        if ((bigCategory == null || bigCategory.isBlank())
-                && (category == null || category.isBlank())
-                && (name == null || name.isBlank())) {
-            return new PageInfo<>(List.of());
-        }
-        String id = customContextHolder.get();
-        int versionId = Integer.parseInt(id);
-        PageHelper.startPage(page, size);
-        List<Material> list = mapper.getByTriple(versionId, bigCategory, category, name);
-        return new PageInfo<>(list);
-    }
-
-
-
-    /**
      *  查找所有不同的材料品类
      */
     public PageInfo<String> getAllCategories(int page, int size) {
 //        int versionId = versionContextHolder.getVersionId();
-        String versionId = customContextHolder.get();
-        int id = Integer.parseInt(versionId);
+        int versionId = versionContextHolder.getVersionId();
         PageHelper.startPage(page, size);
-        List<String> list= mapper.getAllCategories(id);
+        List<String> list= mapper.getAllCategories(versionId);
+        return new PageInfo<>(list);
+    }
+
+    /**
+     * 根据材料大类查找所有不同的材料品类
+     */
+    public PageInfo<String> getAllCategoriesByBigCategory(int page, int size, String bigCategory) {
+        if (bigCategory == null || bigCategory.isBlank()) {
+            return new PageInfo<>(List.of());
+        }
+        int versionId = versionContextHolder.getVersionId();
+        PageHelper.startPage(page, size);
+        List<String> list = mapper.getAllCategoriesByBigCategory(versionId, bigCategory);
         return new PageInfo<>(list);
     }
 
@@ -377,10 +368,42 @@ public class MaterialService {
      */
     public PageInfo<String> getAllBigCategories(int page, int size) {
         //int versionId = versionContextHolder.getVersionId();
-        String versionId = customContextHolder.get();
+        int versionId = versionContextHolder.getVersionId();
         PageHelper.startPage(page, size);
-        int id = Integer.parseInt(versionId);
-        List<String> list= mapper.getAllBigCategories(id);
+        List<String> list= mapper.getAllBigCategories(versionId);
+        return new PageInfo<>(list);
+    }
+
+    /**
+     * 大类 + 小类 + 材料名 查询
+     * @param bigCategory 大类   精确匹配
+     * @param category    小类   精确匹配
+     * @param name        材料名 模糊
+     */
+    public PageInfo<Material> getByTriple(int page, int size, String bigCategory, String category, String name) {
+        if ((bigCategory == null || bigCategory.isBlank())
+                && (category == null || category.isBlank())
+                && (name == null || name.isBlank())) {
+            return new PageInfo<>(List.of());
+        }
+        int versionId = versionContextHolder.getVersionId();
+        PageHelper.startPage(page, size);
+        List<Material> list = mapper.getByTriple(versionId, bigCategory, category, name);
+        return new PageInfo<>(list);
+    }
+
+    /**
+     * 按description 模糊查找
+     * @param keyword 关键词
+     */
+    public PageInfo<Material> getByDescription(int page, int size, String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return new PageInfo<>(List.of());
+        }
+        int versionId = versionContextHolder.getVersionId();
+        log.info( "versionId: {}", versionId);
+        PageHelper.startPage(page, size);
+        List<Material> list = mapper.getByDescription(versionId, keyword);
         return new PageInfo<>(list);
     }
 

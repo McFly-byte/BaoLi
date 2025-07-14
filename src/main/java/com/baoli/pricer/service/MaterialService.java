@@ -312,13 +312,13 @@ public class MaterialService {
     }
 
     /**
-     * 压缩图片
-     * @param input
-     * @param format
-     * @param maxDim
-     * @param quality
-     * @return
-     * @throws IOException
+     * 使用 Thumbnailator 库进行压缩
+     * @param input 原始图片字节数组
+     *              格式如 "jpg", "png", "webp"
+     *              maxDim 最大边长，单位像素
+     *              quality 压缩质量，0.0-1.0
+     *              如果是 PNG 格式，quality 参数会被忽略
+     *
      */
     private byte[] compressImage(byte[] input, String format, int maxDim, float quality) throws IOException {
         BufferedImage src = ImageIO.read(new ByteArrayInputStream(input));

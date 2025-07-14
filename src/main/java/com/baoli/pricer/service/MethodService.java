@@ -3,6 +3,7 @@ package com.baoli.pricer.service;
 import com.alibaba.excel.EasyExcel;
 import com.alibaba.excel.context.AnalysisContext;
 import com.alibaba.excel.event.AnalysisEventListener;
+import com.baoli.pricer.context.CustomContextHolder;
 import com.baoli.pricer.context.VersionContextHolder;
 import com.baoli.pricer.dto.PageResult;
 import com.baoli.pricer.mapper.MethodMapper;
@@ -19,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -34,9 +36,13 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MethodService {
 
+    @Autowired
+    private CustomContextHolder customContextHolder;
+
     private final MethodMapper mapper;
     private final VersionMapper versionMapper;
     private final VersionContextHolder versionContextHolder;
+
     private static final int BATCH_SIZE = 200;
 
 
@@ -52,14 +58,15 @@ public class MethodService {
      */
     public int importMethods(MultipartFile file) throws Exception {
         // —— 1. 创建新版本 —— //
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm_ss");
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm");
         String versionName = "method_" + LocalDateTime.now().format(fmt);
         Version version = new Version((byte) 1, versionName, LocalDateTime.now().format(fmt)+"施工工艺表");
         versionMapper.insert(version);
         version = versionMapper.getByVersionName(versionName);
         int versionId = version.getId();
         // 将当前线程版本写入上下文，后续查询可复用
-        versionContextHolder.setVersionId(versionId);
+//        versionContextHolder.setVersionId(versionId);
+//        customContextHolder.set(String.valueOf(versionId));
         log.info("新版本创建成功：id={}，name={}", versionId, versionName);
 
         // —— 2. 读取并解析 Excel —— //
@@ -161,7 +168,7 @@ public class MethodService {
      */
     public PageInfo<ProcessMethod> getAll(int page, int size) {
         PageHelper.startPage(page, size);
-        int versionId = versionContextHolder.getVersionId();
+        int versionId = Integer.parseInt(customContextHolder.get());
         List<ProcessMethod> list = mapper.getAll(versionId);
         return new PageInfo<>(list);
     }
@@ -173,7 +180,7 @@ public class MethodService {
         if (keyword == null || keyword.isBlank()) {
             return new PageInfo<>(List.of());
         }
-        int versionId = versionContextHolder.getVersionId();
+        int versionId = Integer.parseInt(customContextHolder.get());
         PageHelper.startPage(page, size);
         List<ProcessMethod> list = mapper.getByKeyword(versionId, keyword);
         return new PageInfo<>(list);
@@ -184,7 +191,7 @@ public class MethodService {
      * @param category 材料品类
      */
     public PageInfo<ProcessMethod> getByCategory(int page, int size, String category) {
-        int versionId = versionContextHolder.getVersionId();
+        int versionId = Integer.parseInt(customContextHolder.get());
         PageHelper.startPage(page, size);
         List<ProcessMethod> list = mapper.getByCategory(versionId, category);
         return new PageInfo<>(list);
@@ -194,9 +201,10 @@ public class MethodService {
      *  查找所有不同的材料品类
      */
     public PageInfo<String> getAllCategories(int page, int size) {
-        int versionId = versionContextHolder.getVersionId();
+        int versionId = Integer.parseInt(customContextHolder.get());
         PageHelper.startPage(page, size);
         List<String> list= mapper.getAllCategories(versionId);
         return new PageInfo<>(list);
     }
+
 }

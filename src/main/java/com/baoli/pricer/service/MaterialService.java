@@ -16,6 +16,7 @@ import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
 import io.minio.http.Method;
 import lombok.extern.slf4j.Slf4j;
+import net.coobird.thumbnailator.Thumbnails;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.ss.util.CellReference;
@@ -27,7 +28,14 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.IIOImage;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.MemoryCacheImageOutputStream;
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -59,6 +67,9 @@ public class MaterialService {
     @Value("${minio.bucket}")
     private String bucketName;
 
+    @Value("${minio.endpoint}")
+    private String minioUrl;
+
     public MaterialService(MinioClient minioClient, MaterialMapper mapper, VersionMapper versionMapper,
                            SimpMessagingTemplate messaging) {
         this.minioClient = minioClient;
@@ -77,13 +88,14 @@ public class MaterialService {
     public void asyncImportMaterials(String taskId, Path tempFile) throws IOException {
         log.info("开始解析文件，taskId={}，path={}", taskId, tempFile);
 
+        Version newVersion = null;
         try {
             // 建立版本信息
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm");
             String currentTime = LocalDateTime.now().format(formatter);
             String tempName = "material_" + currentTime;
-            Version newVersion = new Version((byte) 0, tempName,"材料表");
-            versionMapper.insert( newVersion );
+            newVersion = new Version((byte) 0, tempName, "材料表");
+            versionMapper.insert(newVersion);
             newVersion = versionMapper.getByVersionName(tempName);
             log.info("新版本已创建：{}", newVersion);
             int versionId = newVersion.getId();
@@ -162,7 +174,7 @@ public class MaterialService {
 
                     // 2.5 进度推送：每5行一次
                     processed++;
-                    if ( processed < 50 && processed % 5 == 0 ) {
+                    if (processed < 50 && processed % 5 == 0) {
                         notifyProgress(taskId, processed, totalRows);
                     }
                     if (processed % 50 == 0) {
@@ -181,7 +193,7 @@ public class MaterialService {
                         Map.of("percent", 100, "status", "done")
                 );
 
-                log.info("已处理{}条数据",processed);
+                log.info("已处理{}条数据", processed);
             }
         } catch (Exception ex) {
             log.error("任务 {} 异常", taskId, ex);
@@ -189,8 +201,14 @@ public class MaterialService {
                     "/topic/progress/" + taskId,
                     Map.of("error", ex.getMessage())
             );
+            // 如果处理失败，就删除
+            mapper.deleteByVersionId(newVersion.getId());
+            versionMapper.deleteById(newVersion.getId());
         } finally {
-            try { Files.deleteIfExists(tempFile); } catch (IOException ignore) {}
+            try {
+                Files.deleteIfExists(tempFile);
+            } catch (IOException ignore) {
+            }
         }
     }
 
@@ -227,30 +245,33 @@ public class MaterialService {
     }
 
     /** 如果有图片就上传到minIO */
+    // todo 服务器上minio还没改，这里代码先改了
     private String uploadIfPresent(Map<String, XSSFPictureData> images, int r, int c) throws Exception {
         String key = r + "-" + c;
         XSSFPictureData pic = images.get(key);
         if (pic == null) return null;
+
         byte[] data = pic.getData();
         String ext  = pic.suggestFileExtension();
-        String obj  = "materials/" + UUID.randomUUID() + "." + ext;
+        String contentType = pic.getMimeType();
 
+//  TODO 压缩接口改好了
+//        if (data.length > 500 * 1024) {
+//            data = compressImage(data, ext, 800, 0.8f);
+//        }
+
+        String obj  = "materials/" + UUID.randomUUID() + "." + ext;
         minioClient.putObject(
                 PutObjectArgs.builder()
                         .bucket(bucketName)
                         .object(obj)
                         .stream(new ByteArrayInputStream(data), data.length, -1)
-                        .contentType(pic.getMimeType())
+                        .contentType(contentType)
                         .build()
         );
-        return minioClient.getPresignedObjectUrl(
-                GetPresignedObjectUrlArgs.builder()
-                        .bucket(bucketName)
-                        .object(obj)
-                        .method(Method.GET)
-                        .expiry(7, TimeUnit.DAYS)
-                        .build()
-        );
+        return String.format("%s/%s/%s",
+                minioUrl /* e.g. http://47.115.47.145:9000 */,
+                bucketName, obj);
     }
 
     private String getCellString(Cell cell) {
@@ -290,6 +311,40 @@ public class MaterialService {
         }
     }
 
+    /**
+     * 压缩图片
+     * @param input
+     * @param format
+     * @param maxDim
+     * @param quality
+     * @return
+     * @throws IOException
+     */
+    private byte[] compressImage(byte[] input, String format, int maxDim, float quality) throws IOException {
+        BufferedImage src = ImageIO.read(new ByteArrayInputStream(input));
+        if (src == null) {
+            // 在 ImageIO 无法读取时，尝试使用 Thumbnailator
+            src = Thumbnails.of(new ByteArrayInputStream(input))
+                    .scale(1.0)
+                    .asBufferedImage();
+        }
+        double scale = Math.min(1.0, (double) maxDim / Math.max(src.getWidth(), src.getHeight()));
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        Thumbnails.of(src)
+                .scale(scale)
+                .outputFormat(format)        // 明确指定格式如 "jpg", "png", "webp"
+                .outputQuality(quality)     // 设置压缩质量
+                .toOutputStream(baos);
+
+        return baos.toByteArray();
+    }
+
+    /* -------------------------------------------
+     * 以下是查询方法
+     * ------------------------------------------- */
+
 
     /**
      * 获取材料分页数据
@@ -298,7 +353,7 @@ public class MaterialService {
      */
     public PageInfo<Material> getAll(int page, int size) {
         PageHelper.startPage(page, size);
-        int versionId = versionContextHolder.getVersionId();
+        int versionId = Integer.parseInt(customContextHolder.get());
         List<Material> list = mapper.getAll(versionId);
         return new PageInfo<>(list);
     }
@@ -309,7 +364,7 @@ public class MaterialService {
         if (keyword == null || keyword.isBlank()) {
             return new PageInfo<>(List.of());
         }
-        int versionId = versionContextHolder.getVersionId();
+        int versionId = Integer.parseInt(customContextHolder.get());
         PageHelper.startPage(page, size);
         List<Material> list = mapper.getByMaterialName(versionId, keyword);
         return new PageInfo<>(list);
@@ -320,7 +375,7 @@ public class MaterialService {
         if (keyword == null || keyword.isBlank()) {
             return new PageInfo<>(List.of());
         }
-        int versionId = versionContextHolder.getVersionId();
+        int versionId = Integer.parseInt(customContextHolder.get());
         PageHelper.startPage(page, size);
         List<Material> list = mapper.getByMaterialCategory(versionId, keyword);
         return new PageInfo<>(list);
@@ -333,7 +388,7 @@ public class MaterialService {
         if (keyword == null || keyword.isBlank()) {
             return new PageInfo<>(List.of());
         }
-        int versionId = versionContextHolder.getVersionId();
+        int versionId = Integer.parseInt(customContextHolder.get());
         PageHelper.startPage(page, size);
         List<Material> list = mapper.getByKeyword(versionId, keyword, category);
         return new PageInfo<>(list);
@@ -343,8 +398,7 @@ public class MaterialService {
      *  查找所有不同的材料品类
      */
     public PageInfo<String> getAllCategories(int page, int size) {
-//        int versionId = versionContextHolder.getVersionId();
-        int versionId = versionContextHolder.getVersionId();
+        int versionId = Integer.parseInt(customContextHolder.get());
         PageHelper.startPage(page, size);
         List<String> list= mapper.getAllCategories(versionId);
         return new PageInfo<>(list);
@@ -357,7 +411,7 @@ public class MaterialService {
         if (bigCategory == null || bigCategory.isBlank()) {
             return new PageInfo<>(List.of());
         }
-        int versionId = versionContextHolder.getVersionId();
+        int versionId = Integer.parseInt(customContextHolder.get());
         PageHelper.startPage(page, size);
         List<String> list = mapper.getAllCategoriesByBigCategory(versionId, bigCategory);
         return new PageInfo<>(list);
@@ -367,8 +421,7 @@ public class MaterialService {
      * 查找所有不同的材料大类
      */
     public PageInfo<String> getAllBigCategories(int page, int size) {
-        //int versionId = versionContextHolder.getVersionId();
-        int versionId = versionContextHolder.getVersionId();
+        int versionId = Integer.parseInt(customContextHolder.get());
         PageHelper.startPage(page, size);
         List<String> list= mapper.getAllBigCategories(versionId);
         return new PageInfo<>(list);
@@ -386,7 +439,7 @@ public class MaterialService {
                 && (name == null || name.isBlank())) {
             return new PageInfo<>(List.of());
         }
-        int versionId = versionContextHolder.getVersionId();
+        int versionId = Integer.parseInt(customContextHolder.get());
         PageHelper.startPage(page, size);
         List<Material> list = mapper.getByTriple(versionId, bigCategory, category, name);
         return new PageInfo<>(list);
@@ -400,7 +453,7 @@ public class MaterialService {
         if (keyword == null || keyword.isBlank()) {
             return new PageInfo<>(List.of());
         }
-        int versionId = versionContextHolder.getVersionId();
+        int versionId = Integer.parseInt(customContextHolder.get());
         log.info( "versionId: {}", versionId);
         PageHelper.startPage(page, size);
         List<Material> list = mapper.getByDescription(versionId, keyword);

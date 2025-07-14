@@ -19,17 +19,17 @@ public class VersionInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            Object vid = session.getAttribute("versionId");
-            if (vid instanceof Integer versionId) {
-                versionContextHolder.setVersionId(versionId);
-            }
-        }
-        return true;
-//        String headerValue = request.getHeader("versionid");
-//        CustomContextHolder.set(headerValue);
+//        HttpSession session = request.getSession(false);
+//        if (session != null) {
+//            Object vid = session.getAttribute("versionId");
+//            if (vid instanceof Integer versionId) {
+//                versionContextHolder.setVersionId(versionId);
+//            }
+//        }
 //        return true;
+        String headerValue = request.getHeader("versionid");
+        CustomContextHolder.set(headerValue);
+        return true;
     }
 
     @Override

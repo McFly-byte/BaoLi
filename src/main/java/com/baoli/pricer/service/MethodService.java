@@ -134,31 +134,10 @@ public class MethodService {
         return cell.getStringCellValue().trim();
     }
 
-    private Double getCellNumeric(Cell cell, FormulaEvaluator evaluator) {
-        if (cell == null) {
-            return null;
-        }
-        switch (cell.getCellType()) {
-            case NUMERIC:
-                return cell.getNumericCellValue();
-            case STRING:
-                try {
-                    return Double.valueOf(cell.getStringCellValue().trim());
-                } catch (NumberFormatException e) {
-                    return null;
-                }
-            case FORMULA:
-                CellValue cv = evaluator.evaluate(cell);
-                if (cv.getCellType() == CellType.NUMERIC) {
-                    return cv.getNumberValue();
-                } else {
-                    return null;
-                }
-            default:
-                return null;
-        }
-    }
 
+    /* ------------------------------------
+     * 以下为crud
+     * ------------------------------------*/
 
 
     /**
@@ -168,7 +147,8 @@ public class MethodService {
      */
     public PageInfo<ProcessMethod> getAll(int page, int size) {
         PageHelper.startPage(page, size);
-        int versionId = Integer.parseInt(customContextHolder.get());
+        int versionId = versionMapper.getLatestMethodVersion();
+
         List<ProcessMethod> list = mapper.getAll(versionId);
         return new PageInfo<>(list);
     }
@@ -180,7 +160,7 @@ public class MethodService {
         if (keyword == null || keyword.isBlank()) {
             return new PageInfo<>(List.of());
         }
-        int versionId = Integer.parseInt(customContextHolder.get());
+        int versionId = versionMapper.getLatestMethodVersion();
         PageHelper.startPage(page, size);
         List<ProcessMethod> list = mapper.getByKeyword(versionId, keyword);
         return new PageInfo<>(list);
@@ -190,10 +170,10 @@ public class MethodService {
      * 根据材料品类查询 Material 列表
      * @param category 材料品类
      */
-    public PageInfo<ProcessMethod> getByCategory(int page, int size, String category) {
-        int versionId = Integer.parseInt(customContextHolder.get());
+    public PageInfo<ProcessMethod> getByCategory(int page, int size, String category, String bigCategory) {
+        int versionId = versionMapper.getLatestMethodVersion();
         PageHelper.startPage(page, size);
-        List<ProcessMethod> list = mapper.getByCategory(versionId, category);
+        List<ProcessMethod> list = mapper.getByCategory(versionId, category, bigCategory);
         return new PageInfo<>(list);
     }
 
@@ -201,7 +181,7 @@ public class MethodService {
      *  查找所有不同的材料品类
      */
     public PageInfo<String> getAllCategories(int page, int size) {
-        int versionId = Integer.parseInt(customContextHolder.get());
+        int versionId = versionMapper.getLatestMethodVersion();
         PageHelper.startPage(page, size);
         List<String> list= mapper.getAllCategories(versionId);
         return new PageInfo<>(list);

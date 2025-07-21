@@ -47,7 +47,8 @@
     <select id="getByCategory" parameterType="map" resultMap="BaseResultMap">
         SELECT *
         FROM baoli.process_method
-        WHERE material_category = #{category}
+        WHERE ( material_category = #{category}
+                    OR material_category = #{bigCategory} )
         <include refid="com.baoli.pricer.mapper.CommonSqlMapper.VersionFilter"/>
         ORDER BY id
     </select>

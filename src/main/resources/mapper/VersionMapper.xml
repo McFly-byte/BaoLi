@@ -28,6 +28,14 @@
         WHERE version_name = #{versionName}
     </select>
 
+    <select id="getLatestMethodVersion" resultType="Integer" >
+        SELECT id
+        FROM version
+        WHERE flag = 1
+        ORDER BY created_at DESC
+        LIMIT 1
+    </select>
+
     <!-- 3. 根据 flag 查询 -->
     <select id="getByFlag" resultType="com.baoli.pricer.pojo.Version" parameterType="int">
         SELECT id,

@@ -99,7 +99,7 @@ public interface MaterialMapper {
      */
     List<Material> getByIds(@Param("ids") List<Integer> ids);
 
-    @Delete("DELETE FROM baoli.material WHERE versionId = #{versionId}")
+    @Delete("DELETE FROM baoli.material WHERE version_id = #{versionId}")
     Integer deleteByVersionId( @Param("versionId") int versionId);
 
 }

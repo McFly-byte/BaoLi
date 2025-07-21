@@ -34,7 +34,7 @@ public interface MethodMapper {
     /**
      * 根据材料品类精确检索
      */
-    List<ProcessMethod> getByCategory(@Param("versionId") int versionId, @Param("category") String category);
+    List<ProcessMethod> getByCategory(@Param("versionId") int versionId, @Param("category") String category, @Param("bigCategory") String bigCategory);
 
     /**
      *  查找所有不同的材料品类

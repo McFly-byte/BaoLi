@@ -71,8 +71,9 @@ public class MethodController {
     public ResponseEntity<PageInfo<ProcessMethod>> getByCategory(
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "size", defaultValue = "10") int size,
-            @RequestParam("category") String category ) {
-        PageInfo<ProcessMethod> result = service.getByCategory(page, size, category);
+            @RequestParam("category") String category,
+            @RequestParam(value = "bigcategory") String bigCategory) {
+        PageInfo<ProcessMethod> result = service.getByCategory(page, size, category, bigCategory);
         return ResponseEntity.ok(result);
     }
 

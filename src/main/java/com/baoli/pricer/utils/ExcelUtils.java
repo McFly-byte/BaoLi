@@ -4,7 +4,7 @@ import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.DataFormatter;
 
 public class ExcelUtils {
-    private static final DataFormatter FORMATTER = new DataFormatter();
+    public static final DataFormatter FORMATTER = new DataFormatter();
 
     /**
      * 把单元格当前在 Excel 界面上显示的“数字”提取出来。
@@ -48,4 +48,57 @@ public class ExcelUtils {
             return null;
         }
     }
+
+
+    /**
+     * 获取单元格当前在 Excel/WPS 界面上展示的“文字”内容。
+     * 对于 FORMULA：**只**读“缓存结果”，绝不触发外部引用或者使用 DataFormatter 去格式化公式本身。
+     * 对于 NUMERIC、STRING、其他：按原逻辑处理。
+     *
+     * @param cell POI 单元格对象
+     * @return WPS/Excel 界面上看到的原始文本（包含多行换行符、单位、中文等），若为空或仅有空白，返回 null
+     */
+    public static String getDisplayedText(Cell cell) {
+        if (cell == null) {
+            return null;
+        }
+
+        // 1) 公式单元格：只读缓存结果类型
+        if (cell.getCellType() == CellType.FORMULA) {
+            CellType cached = cell.getCachedFormulaResultType();
+            switch (cached) {
+                case STRING:
+                    String s = cell.getStringCellValue();
+                    return (s == null || s.trim().isEmpty()) ? null : s.trim();
+                case NUMERIC:
+                    // 数字／日期要保留界面格式（含千分位、小数、日期格式等）
+                    String numText = FORMATTER.formatCellValue(cell);
+                    return numText.trim().isEmpty() ? null : numText.trim();
+                case BLANK:
+                    return null;
+                default:
+                    // 遇到 ERROR、BOOLEAN 等也走 formatter，再严格 trim
+                    String other = FORMATTER.formatCellValue(cell);
+                    return other.trim().isEmpty() ? null : other.trim();
+            }
+        }
+
+        // 2) 纯数值或日期：用 DataFormatter 保留格式
+        if (cell.getCellType() == CellType.NUMERIC) {
+            String text = FORMATTER.formatCellValue(cell);
+            return text.trim().isEmpty() ? null : text.trim();
+        }
+
+        // 3) 纯文本
+        if (cell.getCellType() == CellType.STRING) {
+            String text = cell.getStringCellValue();
+            return (text == null || text.trim().isEmpty()) ? null : text.trim();
+        }
+
+        // 4) 其他类型（BOOLEAN、ERROR）：也格式化一次
+        String text = FORMATTER.formatCellValue(cell);
+        return text.trim().isEmpty() ? null : text.trim();
+    }
+
+
 }

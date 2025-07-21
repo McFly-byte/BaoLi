@@ -8,6 +8,7 @@ import com.baoli.pricer.pojo.Material;
 import com.baoli.pricer.mapper.MaterialMapper;
 import com.baoli.pricer.pojo.ProcessMethod;
 import com.baoli.pricer.pojo.Version;
+import com.baoli.pricer.utils.ExcelUtils;
 import com.baoli.pricer.utils.WpsFloatedImageExtractor;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -127,7 +128,8 @@ public class MaterialService {
                 // 2. 主循环：从第2行 (r=2) 开始
                 for (int r = 2; r <= sheet.getLastRowNum(); r++) {
                     Row row = sheet.getRow(r);
-                    String name = getCellString(row == null ? null : row.getCell(3));
+//                    String name = getCellString(row == null ? null : row.getCell(3));
+                    String name =  ExcelUtils.getDisplayedText(row.getCell(3));
 
                     // 2.1 判断是否为合并区域起始行
                     int finalR = r;
@@ -174,10 +176,7 @@ public class MaterialService {
 
                     // 2.5 进度推送：每5行一次
                     processed++;
-                    if (processed < 50 && processed % 5 == 0) {
-                        notifyProgress(taskId, processed, totalRows);
-                    }
-                    if (processed % 50 == 0) {
+                    if (processed % 5 == 0) {
                         notifyProgress(taskId, processed, totalRows);
                     }
                 }
@@ -215,7 +214,9 @@ public class MaterialService {
 
     private void notifyProgress(String taskId, int done, int total) {
         int pct = (int)(done * 100.0 / total);
-        log.info( "解析进度：{}%", pct);
+        // todo 打包时把日志输出注释掉，太浪费服务器资源
+//        log.info( "解析进度：{}%", pct);
+        System.out.print("\r解析进度：" + pct + "%" + ">".repeat(Math.max(0, pct)));
         messaging.convertAndSend(
                 "/topic/progress/" + taskId,
                 Map.of("percent", pct)
@@ -245,7 +246,8 @@ public class MaterialService {
     }
 
     /** 如果有图片就上传到minIO */
-    // todo 服务器上minio还没改，这里代码先改了
+    // todone
+    // 服务器上minio还没改，这里代码先改了
     private String uploadIfPresent(Map<String, XSSFPictureData> images, int r, int c) throws Exception {
         String key = r + "-" + c;
         XSSFPictureData pic = images.get(key);
@@ -255,7 +257,7 @@ public class MaterialService {
         String ext  = pic.suggestFileExtension();
         String contentType = pic.getMimeType();
 
-//  TODO 压缩接口改好了
+//  TODO 压缩接口改好了之后
 //        if (data.length > 500 * 1024) {
 //            data = compressImage(data, ext, 800, 0.8f);
 //        }
@@ -279,7 +281,7 @@ public class MaterialService {
     }
 
     /** 读取数值单元格，若是公式，则先评估再取值 */
-    // TODO 先不设置为截取2位小数，价格计算比较复杂，尽量避免引入误差
+    // TODOne 先不设置为截取2位小数，价格计算比较复杂，尽量避免引入误差
     private Double getCellNumeric(Cell cell, FormulaEvaluator evaluator) {
         if (cell == null) return null;
 //        System.out.println(cell.getCellType());

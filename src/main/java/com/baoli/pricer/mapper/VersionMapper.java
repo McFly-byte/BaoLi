@@ -24,6 +24,11 @@ public interface VersionMapper {
     Version getByVersionName(@Param("versionName") String versionName);
 
     /**
+     * 获取最新的工艺版本（flag=1）
+     */
+    Integer getLatestMethodVersion();
+
+    /**
      * 根据 flag 查询版本列表
      */
     List<Version> getByFlag(@Param("flag") byte flag);
@@ -32,6 +37,8 @@ public interface VersionMapper {
      * 查询所有版本
      */
     List<Version> getAll();
+
+
 
     /**
      * 根据 id 更新版本记录

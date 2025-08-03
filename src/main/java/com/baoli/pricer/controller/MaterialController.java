@@ -1,12 +1,8 @@
 package com.baoli.pricer.controller;
 
-import com.baoli.pricer.dto.PageResult;
 import com.baoli.pricer.pojo.Material;
-import com.baoli.pricer.pojo.ProcessMethod;
 import com.baoli.pricer.service.MaterialService;
-import com.github.pagehelper.Page;
 import com.github.pagehelper.PageInfo;
-import jakarta.servlet.http.HttpSession;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -18,9 +14,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -42,15 +35,25 @@ public class MaterialController {
      */
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, String>> importMaterials(@RequestParam("file") MultipartFile file) throws IOException {
-
         // 1. 生成任务 ID
         String taskId = UUID.randomUUID().toString();
 
-        Path tempFile = Files.createTempFile(LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm")), ".xlsx");
+        // 2. 在一个临时目录里，以原始文件名创建临时文件
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null || originalFilename.isBlank()) {
+            originalFilename = "材料表.xlsx";
+        }
+        // .createTempDirectory 保证了隔离，不会和别的进程/线程冲突
+        Path tempDir = Files.createTempDirectory("import_");
+        // .resolve 会把原始文件名当作最终文件名
+        Path tempFile = tempDir.resolve(originalFilename);
         file.transferTo(tempFile.toFile());
-        // 2. 异步执行
+
+        System.out.println("临时文件路径: " + tempFile.toAbsolutePath());
+        // 3. 异步执行，Service 层拿到的 tempFile.getFileName() 就是 “原始文件名.xlsx”
         service.asyncImportMaterials(taskId, tempFile);
-        // 3. 立即返回给前端
+
+        // 4. 立即返回
         return ResponseEntity.ok(Map.of("taskId", taskId));
     }
 

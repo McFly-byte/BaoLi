@@ -1,39 +1,27 @@
 package com.baoli.pricer.service;
 
 import com.baoli.pricer.context.CustomContextHolder;
-import com.baoli.pricer.context.VersionContextHolder;
-import com.baoli.pricer.dto.PageResult;
 import com.baoli.pricer.mapper.VersionMapper;
 import com.baoli.pricer.pojo.Material;
 import com.baoli.pricer.mapper.MaterialMapper;
-import com.baoli.pricer.pojo.ProcessMethod;
 import com.baoli.pricer.pojo.Version;
 import com.baoli.pricer.utils.ExcelUtils;
 import com.baoli.pricer.utils.WpsFloatedImageExtractor;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.MinioClient;
 import io.minio.PutObjectArgs;
-import io.minio.http.Method;
 import lombok.extern.slf4j.Slf4j;
 import net.coobird.thumbnailator.Thumbnails;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
-import org.apache.poi.ss.util.CellReference;
 import org.apache.poi.xssf.usermodel.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
-import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
-import javax.imageio.ImageWriteParam;
-import javax.imageio.ImageWriter;
-import javax.imageio.stream.MemoryCacheImageOutputStream;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -43,7 +31,6 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 /**
  * 服务层：解析 Excel 并上传图片至 MinIO，持久化至 MySQL
@@ -56,9 +43,6 @@ public class MaterialService {
     private final MaterialMapper mapper;
     private final VersionMapper versionMapper;
     private final SimpMessagingTemplate messaging;
-
-    @Autowired
-    private VersionContextHolder versionContextHolder;
 
     @Autowired
     private CustomContextHolder customContextHolder;
@@ -92,12 +76,22 @@ public class MaterialService {
         Version newVersion = null;
         try {
             // 建立版本信息
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm");
+            // 从临时文件路径中提取原始文件名（去扩展名）
+            String originalFilename = tempFile.getFileName().toString();
+            // 如果需要去掉扩展名：
+            String versionName = originalFilename;
+            int dotIndex = originalFilename.lastIndexOf('.');
+            if (dotIndex > 0) {
+                versionName = originalFilename.substring(0, dotIndex);
+            }
+            // 添加时间戳放重复
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("_yyyy_MM_dd_HH_mm");
             String currentTime = LocalDateTime.now().format(formatter);
-            String tempName = "material_" + currentTime;
-            newVersion = new Version((byte) 0, tempName, "材料表");
+            versionName += currentTime;
+
+            newVersion = new Version((byte) 0, versionName, versionName);
             versionMapper.insert(newVersion);
-            newVersion = versionMapper.getByVersionName(tempName);
+            newVersion = versionMapper.getByVersionName(versionName);
             log.info("新版本已创建：{}", newVersion);
             int versionId = newVersion.getId();
 

@@ -1,21 +1,13 @@
 package com.baoli.pricer.service;
 
-import com.alibaba.excel.EasyExcel;
-import com.alibaba.excel.context.AnalysisContext;
-import com.alibaba.excel.event.AnalysisEventListener;
 import com.baoli.pricer.context.CustomContextHolder;
-import com.baoli.pricer.context.VersionContextHolder;
-import com.baoli.pricer.dto.PageResult;
 import com.baoli.pricer.mapper.MethodMapper;
 import com.baoli.pricer.mapper.VersionMapper;
-import com.baoli.pricer.pojo.Material;
 import com.baoli.pricer.pojo.ProcessMethod;
-import com.baoli.pricer.pojo.ProcessMethodParse;
 import com.baoli.pricer.pojo.Version;
 import com.baoli.pricer.utils.ExcelUtils;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
@@ -24,8 +16,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -41,7 +31,6 @@ public class MethodService {
 
     private final MethodMapper mapper;
     private final VersionMapper versionMapper;
-    private final VersionContextHolder versionContextHolder;
 
     private static final int BATCH_SIZE = 200;
 

@@ -33,6 +33,8 @@ public class CartService {
      */
     @Transactional
     public void addItem(Cart cart) {
+        // 计算总价：(材料价 + 工艺价) * 数量 * 1.15
+        cart.setTotalPrice((cart.getMaterialPrice() + cart.getMethodPrice()) * cart.getQuantity() * 1.15);
         cartMapper.addItem(cart);
     }
 
@@ -68,6 +70,8 @@ public class CartService {
         cart.setMethodPrice(pm.getPrice());
         cart.setQuantity(quantity);
         cart.setOrderId(orderId);
+        // 计算总价：(材料价 + 工艺价) * 数量 * 1.15
+        cart.setTotalPrice((cart.getMaterialPrice()+cart.getMethodPrice()) * quantity * 1.15);
 
         // 3. 插入数据库
         cartMapper.addItem(cart);
@@ -106,6 +110,7 @@ public class CartService {
             c.setMethod(pm.getMethod());
             c.setMethodPrice(pm.getPrice());
             if (c.getQuantity() == null) c.setQuantity(1);
+            c.setTotalPrice((c.getMaterialPrice()+c.getMethodPrice()) * c.getQuantity() * 1.15);
         });
         return cartMapper.insertBatch(items);
     }

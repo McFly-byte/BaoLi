@@ -6,20 +6,20 @@
     <insert id="addItem" parameterType="com.baoli.pricer.pojo.Cart" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO baoli.cart
         (material_id, method_id, material_category, material_name, useplace,
-         material_price, method, method_price, quantity, order_id)
+         material_price, method, method_price, quantity, order_id, total_price)
         VALUES
             (#{materialId}, #{methodId}, #{materialCategory}, #{materialName}, #{useplace},
-             #{materialPrice}, #{method}, #{methodPrice}, #{quantity}, #{orderId})
+             #{materialPrice}, #{method}, #{methodPrice}, #{quantity}, #{orderId}, #{totalPrice})
     </insert>
 
     <insert id="insertBatch" parameterType="java.util.List">
         INSERT INTO baoli.cart
         (material_id, method_id, material_category, material_name,
-        material_price, method, method_price, quantity, order_id)
+        material_price, method, method_price, quantity, order_id, total_price)
         VALUES
         <foreach collection="list" item="item" separator=",">
             (#{item.materialId}, #{item.methodId}, #{item.materialCategory}, #{item.materialName},
-            #{item.materialPrice}, #{item.method}, #{item.methodPrice}, #{item.quantity}, #{item.orderId})
+            #{item.materialPrice}, #{item.method}, #{item.methodPrice}, #{item.quantity}, #{item.orderId}, #{totalPrice})
         </foreach>
     </insert>
 

@@ -141,7 +141,7 @@ public class MaterialService {
                             String spec = getCellString(subRow.getCell(7)); // 规格列
                             if (spec == null || spec.isEmpty()) continue;
 
-                            Material m = buildMaterialFromRow(subRow, images, sub, evaluator);
+                            Material m = buildMaterialFromRow(versionId, subRow, images, sub, evaluator); // versionId作为minio上的文件夹名
                             m.setMaterialName(mergedName + "：" + spec);
                             m.setVersionId(versionId);
                             batch.add(m);
@@ -159,7 +159,7 @@ public class MaterialService {
                             continue;
                         }
                         // 2.4 正常处理一行
-                        Material m = buildMaterialFromRow(row, images, r, evaluator);
+                        Material m = buildMaterialFromRow(versionId, row, images, r, evaluator); // versionId作为minio上的文件夹名
                         m.setVersionId(versionId);
                         batch.add(m);
                         if (batch.size() >= 200) {
@@ -217,7 +217,8 @@ public class MaterialService {
         );
     }
 
-    private Material buildMaterialFromRow(Row row,
+    private Material buildMaterialFromRow(Integer versionId,
+                                          Row row,
                                           Map<String, XSSFPictureData> images,
                                           int r,
                                           FormulaEvaluator evaluator) throws Exception {
@@ -228,21 +229,19 @@ public class MaterialService {
         m.setPrice(getCellNumeric(row.getCell(14), evaluator));
 
         m.setPhotoDaban(
-                uploadIfPresent(images, r, 4)
+                uploadIfPresent(versionId, images, r, 4)
         );
         m.setPhotoChengpin(
-                uploadIfPresent(images, r, 5)
+                uploadIfPresent(versionId, images, r, 5)
         );
         m.setPhotoXiaoguo(
-                uploadIfPresent(images, r, 6)
+                uploadIfPresent(versionId, images, r, 6)
         );
         return m;
     }
 
     /** 如果有图片就上传到minIO */
-    // todone
-    // 服务器上minio还没改，这里代码先改了
-    private String uploadIfPresent(Map<String, XSSFPictureData> images, int r, int c) throws Exception {
+    private String uploadIfPresent(Integer versionId, Map<String, XSSFPictureData> images, int r, int c) throws Exception {
         String key = r + "-" + c;
         XSSFPictureData pic = images.get(key);
         if (pic == null) return null;
@@ -251,12 +250,7 @@ public class MaterialService {
         String ext  = pic.suggestFileExtension();
         String contentType = pic.getMimeType();
 
-//  TODO 压缩接口改好了之后
-//        if (data.length > 500 * 1024) {
-//            data = compressImage(data, ext, 800, 0.8f);
-//        }
-
-        String obj  = "materials/" + UUID.randomUUID() + "." + ext;
+        String obj  = versionId + "/" + UUID.randomUUID() + "." + ext;
         minioClient.putObject(
                 PutObjectArgs.builder()
                         .bucket(bucketName)
@@ -266,7 +260,7 @@ public class MaterialService {
                         .build()
         );
         return String.format("%s/%s/%s",
-                minioUrl /* e.g. http://47.115.47.145:9000 */,
+                minioUrl,
                 bucketName, obj);
     }
 

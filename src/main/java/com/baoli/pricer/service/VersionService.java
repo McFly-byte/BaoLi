@@ -2,16 +2,22 @@ package com.baoli.pricer.service;
 
 import com.baoli.pricer.mapper.MaterialMapper;
 import com.baoli.pricer.mapper.MethodMapper;
-import com.baoli.pricer.pojo.Material;
 import com.baoli.pricer.pojo.Version;
 import com.baoli.pricer.mapper.VersionMapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import io.minio.ListObjectsArgs;
+import io.minio.MinioClient;
+import io.minio.RemoveObjectsArgs;
+import io.minio.Result;
+import io.minio.messages.DeleteObject;
+import io.minio.messages.Item;
 import lombok.extern.slf4j.Slf4j;
-import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Slf4j
@@ -24,6 +30,15 @@ public class VersionService {
     private MethodMapper methodMapper;
     @Autowired
     private MaterialMapper materialMapper;
+
+    @Autowired
+    private MinioClient minioClient;
+
+    @Value("${minio.bucket}")
+    private String bucketName;
+
+    @Value("${minio.endpoint}")
+    private String minioUrl;
 
     /**
      * 插入一条新版本，插入后会自动回填到 version.id
@@ -118,6 +133,47 @@ public class VersionService {
             }
             else {
                 rows = materialMapper.deleteByVersionId(id);
+                // 删除 MinIO 中 versionId 文件夹下所有对象
+                // 1. 扫描 MinIO 中所有以 versionId/ 开头的对象
+                Iterable<Result<Item>> results = minioClient.listObjects(
+                        ListObjectsArgs.builder()
+                                .bucket(bucketName)
+                                .prefix(id + "/")
+                                .recursive(true) // 递归列出文件夹下所有对象
+                                .build()
+                );
+
+                // 2. 批量删除
+                List<DeleteObject> objectsToDelete = new ArrayList<>();
+                for (Result<Item> result : results) {
+                    Item item = null;
+                    try {
+                        item = result.get();
+                        objectsToDelete.add(new DeleteObject(item.objectName()));
+                    } catch (Exception e) {
+                        log.error("列出 MinIO 对象失败: {}", e.getMessage(), e);
+                    }
+                }
+
+                if (!objectsToDelete.isEmpty()) {
+                    try {
+                        minioClient.removeObjects(
+                                io.minio.RemoveObjectsArgs.builder()
+                                        .bucket(bucketName)
+                                        .objects(objectsToDelete)
+                                        .build()
+                        ).forEach(r -> {
+                            try {
+                                r.get(); // 会抛出删除失败的异常
+                            } catch (Exception e) {
+                                log.error("删除 MinIO 对象失败: {}", e.getMessage(), e);
+                            }
+                        });
+                        log.info("成功删除 MinIO 中版本 {} 的所有对象，共 {} 个", id, objectsToDelete.size());
+                    } catch (Exception e) {
+                        log.error("批量删除 MinIO 对象失败: {}", e.getMessage(), e);
+                    }
+                }
             }
             log.info("成功删除{}条记录，版本ID: {}", rows, id);
             return true;
@@ -126,7 +182,6 @@ public class VersionService {
             return false;
         }
     }
-
 
 
 }

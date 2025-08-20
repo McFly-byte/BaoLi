@@ -226,7 +226,7 @@ public class MaterialService {
         m.setMaterialBigCategory(String.valueOf(row.getCell(1)));
         m.setMaterialCategory(getCellString(row.getCell(2)));
         m.setMaterialName(getCellString(row.getCell(3)));
-        m.setPrice(getCellNumeric(row.getCell(14), evaluator));
+        m.setPrice(ExcelUtils.getDisplayedNumber(row.getCell(13))); // 价格列
 
         m.setPhotoDaban(
                 uploadIfPresent(versionId, images, r, 4)

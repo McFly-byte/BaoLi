@@ -301,36 +301,7 @@ public class MaterialService {
         }
     }
 
-    /**
-     * 使用 Thumbnailator 库进行压缩
-     * @param input 原始图片字节数组
-     *              格式如 "jpg", "png", "webp"
-     *              maxDim 最大边长，单位像素
-     *              quality 压缩质量，0.0-1.0
-     *              如果是 PNG 格式，quality 参数会被忽略
-     *
-     */
-    private byte[] compressImage(byte[] input, String format, int maxDim, float quality) throws IOException {
-        BufferedImage src = ImageIO.read(new ByteArrayInputStream(input));
-        if (src == null) {
-            // 在 ImageIO 无法读取时，尝试使用 Thumbnailator
-            src = Thumbnails.of(new ByteArrayInputStream(input))
-                    .scale(1.0)
-                    .asBufferedImage();
-        }
-        double scale = Math.min(1.0, (double) maxDim / Math.max(src.getWidth(), src.getHeight()));
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-        Thumbnails.of(src)
-                .scale(scale)
-                .outputFormat(format)        // 明确指定格式如 "jpg", "png", "webp"
-                .outputQuality(quality)     // 设置压缩质量
-                .toOutputStream(baos);
-
-        return baos.toByteArray();
-    }
-
+    
     /* -------------------------------------------
      * 以下是查询方法
      * ------------------------------------------- */

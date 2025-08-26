@@ -20,7 +20,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         // 前端建立 WS 连接的端点
-        registry.addEndpoint("/ws-progress/ws").setAllowedOrigins("*").withSockJS();
+        registry.addEndpoint("/ws-progress/ws")
+                .setAllowedOrigins("*")
+                .withSockJS();
     }
 }
 

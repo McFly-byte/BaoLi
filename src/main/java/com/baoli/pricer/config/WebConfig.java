@@ -14,6 +14,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(versionInterceptor)
-                .addPathPatterns("/**"); // 你也可以指定特定路径，例如 /material/**、/cart/** 等
+                .addPathPatterns("/**")
+                .excludePathPatterns("/api/materials/import", "/ws-progress/**");
     }
 }

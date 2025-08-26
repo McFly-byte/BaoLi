@@ -28,6 +28,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest req, HttpServletResponse resp,
                                     FilterChain chain) throws ServletException, IOException {
+        // 检查请求路径是否为 WebSocket 握手路径，若是，则跳过验证
+        if (req.getRequestURI().startsWith("/ws-progress/")) {
+            chain.doFilter(req, resp);
+            return;
+        }
+
         String header = req.getHeader("Authorization");
         if (StringUtils.hasText(header) && header.startsWith("Bearer ")) {
             String token = header.substring(7);

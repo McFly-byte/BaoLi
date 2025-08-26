@@ -29,6 +29,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/login").permitAll()
                         .requestMatchers("/ws-progress/**").permitAll()// websocket的放行 lk改的
+                        .requestMatchers("/api/materials/import").permitAll() // 放行大文件上传
                         .anyRequest().authenticated()
                 )
                 .csrf(AbstractHttpConfigurer::disable)  // 禁用 CSRF
@@ -47,7 +48,6 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration cfg = new CorsConfiguration();
-        //cfg.setAllowedOrigins(List.of("http://your‑frontend.example.com"));
         cfg.setAllowedOrigins(List.of(
                 "http://localhost:8081",
                 "http://192.168.81.141:8081"

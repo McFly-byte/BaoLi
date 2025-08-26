@@ -1,8 +1,8 @@
 spring:
   servlet:
     multipart:
-      max-file-size: 3GB
-      max-request-size: 3GB
+      max-file-size: 1GB
+      max-request-size: 1GB
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -66,3 +66,4 @@ pagehelper:
   reasonable: true
   support-methods-arguments: true
   params: count=countSql
+

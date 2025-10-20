@@ -6,8 +6,8 @@ spring:
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-#    url: jdbc:mysql://47.115.47.145:3306/baoli?useSSL=false&characterEncoding=UTF-8&serverTimezone=UTC&allowPublicKeyRetrieval=true
-    url: jdbc:mysql://192.168.81.141:3306/baoli?useSSL=false&characterEncoding=UTF-8&serverTimezone=UTC&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://47.115.47.145:3306/baoli?useSSL=false&characterEncoding=UTF-8&serverTimezone=UTC&allowPublicKeyRetrieval=true
+#    url: jdbc:mysql://192.168.81.141:3306/baoli?useSSL=false&characterEncoding=UTF-8&serverTimezone=UTC&allowPublicKeyRetrieval=true
     username: baoliuser
     password: "#ALiYun123"
 
@@ -20,6 +20,15 @@ spring:
 
   mvc:
     dispatch-options-request: true
+
+
+  data:
+    redis:
+      host: ${mcfly.redis.host}
+      port: ${mcfly.redis.port}
+      database: ${mcfly.redis.database}
+
+
 
 
 
@@ -55,8 +64,8 @@ mybatis:
     map-underscore-to-camel-case: true
 
 minio:
-#  endpoint: http://47.115.47.145:9000
-  endpoint: "http://192.168.81.141:9000"
+  endpoint: http://47.115.47.145:9000
+#  endpoint: "http://192.168.81.141:9000"
   access-key: minioadmin
   secret-key: minioadmin
   bucket: baoliphotos
@@ -66,4 +75,5 @@ pagehelper:
   reasonable: true
   support-methods-arguments: true
   params: count=countSql
+
 

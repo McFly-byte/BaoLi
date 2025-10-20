@@ -16,14 +16,17 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        final String username = "admin";
-        if (userService.getByUsername(username) == null) {
-            User user = new User();
-            user.setUsername(username);
-            user.setPassword("Poly@001"); // 明文，createUser 会自动 BCrypt 编码
-            userService.createUser(user);
-            System.out.printf("init user id=%s, username=%s%n", user.getId(), user.getUsername());
+        for (int i = 1; i <= 10; i++) {
+            String username = String.format("admin%02d", i); // 格式化为admin01、admin02...admin10
+            if (userService.getByUsername(username) == null) {
+                User user = new User();
+                user.setUsername(username);
+                user.setPassword("Poly@001"); // createUser方法会自动BCrypt加密
+                userService.createUser(user);
+                System.out.printf("初始化用户 id=%s, username=%s%n", user.getId(), username);
+            }
         }
+
     }
 }
 

@@ -53,9 +53,6 @@ public class MethodService {
         versionMapper.insert(version);
         version = versionMapper.getByVersionName(versionName);
         int versionId = version.getId();
-        // 将当前线程版本写入上下文，后续查询可复用
-//        versionContextHolder.setVersionId(versionId);
-//        customContextHolder.set(String.valueOf(versionId));
         log.info("新版本创建成功：id={}，name={}", versionId, versionName);
 
         // —— 2. 读取并解析 Excel —— //

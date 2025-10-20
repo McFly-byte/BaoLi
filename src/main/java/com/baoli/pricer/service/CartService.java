@@ -47,8 +47,8 @@ public class CartService {
         Material mat = materialMapper.getById(materialId);
         ProcessMethod pm = methodMapper.getById(methodId);
 
-        if (mat == null || pm == null) {
-            throw new IllegalArgumentException("无效的材料或工艺 ID");
+        if (mat == null ) {
+            throw new IllegalArgumentException("无效的材料ID");
         }
         if (quantity == null || quantity <= 0) {
             throw new IllegalArgumentException("数量必须大于 0");
@@ -66,8 +66,15 @@ public class CartService {
         cart.setMaterialCategory(mat.getMaterialCategory());
         cart.setMaterialName(mat.getMaterialName());
         cart.setMaterialPrice(mat.getPrice());
-        cart.setMethod(pm.getMethod());
-        cart.setMethodPrice(pm.getPrice());
+        if ( pm == null ) {
+            cart.setMethod("无施工");
+            cart.setMethodPrice(0.0);
+        }
+        else {
+            cart.setMethod(pm.getMethod());
+            cart.setMethodPrice(pm.getPrice());
+        }
+
         cart.setQuantity(quantity);
         cart.setOrderId(orderId);
         // 计算总价：(材料价 + 工艺价) * 数量 * 1.15

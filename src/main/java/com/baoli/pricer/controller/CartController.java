@@ -36,7 +36,8 @@ public class CartController {
     @PostMapping("/item")
     public ResponseEntity<Integer> addItem( @RequestBody Cart cart ) {
         log.info( cart.toString() );
-        cartService.addItem(cart);
+//        cartService.addItem(cart);
+        cartService.addItem(cart.getMaterialId(), cart.getMethodId(), cart.getQuantity(), cart.getOrderId());
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 

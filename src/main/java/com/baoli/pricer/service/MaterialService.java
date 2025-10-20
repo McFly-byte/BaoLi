@@ -208,9 +208,7 @@ public class MaterialService {
 
     private void notifyProgress(String taskId, int done, int total) {
         int pct = (int)(done * 100.0 / total);
-        // todo 打包时把日志输出注释掉，太浪费服务器资源
-//        log.info( "解析进度：{}%", pct);
-        System.out.print("\r解析进度：" + pct + "%" + ">".repeat(Math.max(0, pct)));
+//        System.out.print("\r解析进度：" + pct + "%" + ">".repeat(Math.max(0, pct)));
         messaging.convertAndSend(
                 "/topic/progress/" + taskId,
                 Map.of("percent", pct)
